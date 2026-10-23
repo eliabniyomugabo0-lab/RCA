@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/* Theme Color Switching System */
+:root {
+  --theme-transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+body {
+  transition: var(--theme-transition);
+}
+
+/* 1. Midnight Navy (Default GCS Stadium Operations) */
+[data-theme="navy"] {
+  color-scheme: dark;
+}
+
+/* 2. Pitch Turf (Cricket Ground Grass & Clay Dark) */
+[data-theme="turf"] {
+  color-scheme: dark;
+}
+[data-theme="turf"] body {
+  background-color: #041411 !important;
+}
+[data-theme="turf"] .bg-slate-950 {
+  background-color: #041411 !important;
+}
+[data-theme="turf"] .bg-slate-900 {
+  background-color: #08211c !important;
+}
+[data-theme="turf"] .bg-slate-800 {
+  background-color: #0f332c !important;
+}
+[data-theme="turf"] .border-slate-800 {
+  border-color: #134239 !important;
+}
+[data-theme="turf"] .border-slate-700 {
+  border-color: #1a564a !important;
+}
+
+/* 3. Obsidian OLED (Minimalist Deep Monochromatic Black) */
+[data-theme="obsidian"] {
+  color-scheme: dark;
+}
+[data-theme="obsidian"] body {
+  background-color: #09090b !important;
+}
+[data-theme="obsidian"] .bg-slate-950 {
+  background-color: #09090b !important;
+}
+[data-theme="obsidian"] .bg-slate-900 {
+  background-color: #131316 !important;
+}
+[data-theme="obsidian"] .bg-slate-800 {
+  background-color: #1c1c21 !important;
+}
+[data-theme="obsidian"] .border-slate-800 {
+  border-color: #27272a !important;
+}
+[data-theme="obsidian"] .border-slate-700 {
+  border-color: #3f3f46 !important;
+}
+
+/* 4. Indigo Dusk (Deep Twilight Blue / Night Fixture) */
+[data-theme="dusk"] {
+  color-scheme: dark;
+}
+[data-theme="dusk"] body {
+  background-color: #0a0e1a !important;
+}
+[data-theme="dusk"] .bg-slate-950 {
+  background-color: #0a0e1a !important;
+}
+[data-theme="dusk"] .bg-slate-900 {
+  background-color: #10172a !important;
+}
+[data-theme="dusk"] .bg-slate-800 {
+  background-color: #1a2542 !important;
+}
+[data-theme="dusk"] .border-slate-800 {
+  border-color: #213054 !important;
+}
+[data-theme="dusk"] .border-slate-700 {
+  border-color: #2c4070 !important;
+}
+
+/* 5. Daylight Match (Crisp Modern Enterprise Light Mode) */
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="light"] body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .bg-slate-950 {
+  background-color: #f1f5f9 !important;
+}
+[data-theme="light"] .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+[data-theme="light"] .bg-slate-800 {
+  background-color: #f8fafc !important;
+}
+[data-theme="light"] .bg-slate-700 {
+  background-color: #e2e8f0 !important;
+}
+[data-theme="light"] .border-slate-800 {
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] .border-slate-700 {
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .border-slate-600 {
+  border-color: #94a3b8 !important;
+}
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-slate-100 {
+  color: #0f172a !important;
+}
+[data-theme="light"] .text-slate-200 {
+  color: #1e293b !important;
+}
+[data-theme="light"] .text-slate-300 {
+  color: #334155 !important;
+}
+[data-theme="light"] .text-slate-400 {
+  color: #64748b !important;
+}
+[data-theme="light"] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #94a3b8 !important;
+}

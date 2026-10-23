@@ -1,0 +1,6 @@
+{
+  "name": "GCS Operations Hub",
+  "description": "Comprehensive operations, inventory, task tracking, and communication hub for Gahanga Cricket Stadium (GCS).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
