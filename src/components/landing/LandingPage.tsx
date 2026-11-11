@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowRight, 
   CheckCircle2, 
@@ -16,13 +16,79 @@ import {
   Palette,
   Layers,
   Activity,
-  HardHat
+  HardHat,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  LogIn,
+  Menu,
+  X,
+  Globe,
+  ChevronDown
 } from 'lucide-react';
 import { User, ThemeMode } from '../../types';
-import { useTranslation } from '../../context/LanguageContext';
-import { LanguageSelector } from '../common/LanguageSelector';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { LanguageSwitcher } from '../layout/LanguageSwitcher';
+import { StadiumImageSlider } from '../common/StadiumImageSlider';
 import stadiumHeroImg from '../../assets/images/gcs_stadium_exterior_1791894260939.jpg';
+import gcsPavilionImg from '../../assets/images/gcs_pavilion_vaults_1792306844132.jpg';
+import gcsMatchdayImg from '../../assets/images/gcs_matchday_action_1792306844646.jpg';
+import gcsPitchPrepImg from '../../assets/images/gcs_pitch_preparation_1792306844687.jpg';
+import gcsNightImg from '../../assets/images/gcs_floodlight_night_1792306845634.jpg';
+import gcsNetsImg from '../../assets/images/gcs_practice_nets_1792306845092.jpg';
 import managerAvatarImg from '../../assets/images/avatar_manager_eric_1791894261473.jpg';
+
+const LIVE_HUB_SLIDES = [
+  {
+    id: 'live-oval',
+    src: stadiumHeroImg,
+    badge: 'Host of ICC World Cup Qualifiers',
+    title: 'Gahanga International Oval',
+    subtitle: 'Championship Match Turf & 68m Radius Boundaries',
+    category: 'Main Oval'
+  },
+  {
+    id: 'live-pavilion',
+    src: gcsPavilionImg,
+    badge: 'Signature Parabolic Vaults',
+    title: 'Iconic Grandstand Pavilion',
+    subtitle: 'Compressed Earth & Thin-Shell Concrete Architecture',
+    category: 'Architecture'
+  },
+  {
+    id: 'live-matchday',
+    src: gcsMatchdayImg,
+    badge: 'Tournament Action & Broadcast',
+    title: 'Rwanda National Squads in Action',
+    subtitle: 'ICC African Regional Qualifiers & Live Digital Scoring',
+    category: 'Matchday'
+  },
+  {
+    id: 'live-night',
+    src: gcsNightImg,
+    badge: 'Four 500-Lux Floodlight Towers',
+    title: 'Twilight & Day-Night Fixtures',
+    subtitle: 'Broadcast Standard LED Arrays for Evening T20s',
+    category: 'Night Fixtures'
+  },
+  {
+    id: 'live-pitch',
+    src: gcsPitchPrepImg,
+    badge: 'Groundskeeping & Agronomy',
+    title: 'Heavy Motor Roller Turf Curation',
+    subtitle: 'Black Cotton Clay Loam & 14-16% Moisture Profiling',
+    category: 'Pitch Care'
+  },
+  {
+    id: 'live-nets',
+    src: gcsNetsImg,
+    badge: 'High-Performance Training Hub',
+    title: 'Six-Lane Practice Nets Complex',
+    subtitle: 'All-Weather Synthetic & Natural Grass Strips',
+    category: 'Training Complex'
+  }
+];
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -33,6 +99,8 @@ interface LandingPageProps {
   totalTasksCount: number;
   inventoryItemCount: number;
   staffCount: number;
+  onReplayIntro?: () => void;
+  onOpenLogin?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -43,61 +111,227 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onSelectTheme,
   totalTasksCount,
   inventoryItemCount,
-  staffCount
+  staffCount,
+  onReplayIntro,
+  onOpenLogin
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
+
+  // Dynamic Live Hub Slider State
+  const [liveSlideIdx, setLiveSlideIdx] = useState(0);
+  const [isLivePlaying, setIsLivePlaying] = useState(true);
+  const [isLiveHovered, setIsLiveHovered] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLivePlaying || isLiveHovered) return;
+    const interval = setInterval(() => {
+      setLiveSlideIdx((prev) => (prev + 1) % LIVE_HUB_SLIDES.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [isLivePlaying, isLiveHovered]);
+
+  const handlePrevLiveSlide = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setLiveSlideIdx((prev) => (prev - 1 + LIVE_HUB_SLIDES.length) % LIVE_HUB_SLIDES.length);
+  };
+
+  const handleNextLiveSlide = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setLiveSlideIdx((prev) => (prev + 1) % LIVE_HUB_SLIDES.length);
+  };
+
+  const currentLiveSlide = LIVE_HUB_SLIDES[liveSlideIdx];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white">
       {/* Top Floating Glass Navigation Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo & Stadium Identity */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-500 flex items-center justify-center font-black text-white text-base shadow-md shadow-teal-500/20">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-500 flex items-center justify-center font-black text-white text-xs sm:text-base shadow-md shadow-teal-500/20 shrink-0">
               GCS
             </div>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-white block">
-                {t('app.stadium_name', 'Gahanga Cricket Stadium')}
+            <div className="min-w-0">
+              <span className="font-extrabold text-xs sm:text-base tracking-tight text-white block truncate max-w-[120px] sm:max-w-none">
+                Gahanga Cricket Stadium
               </span>
-              <span className="text-[11px] text-teal-400 font-medium flex items-center gap-1">
+              <span className="text-[10px] sm:text-[11px] text-teal-400 font-medium flex items-center gap-1 truncate">
                 <MapPin className="w-3 h-3 text-teal-400 shrink-0" />
-                {t('app.subtitle', 'Kigali, Rwanda · Operations Hub')}
+                <span className="truncate">Kigali · Operations</span>
               </span>
             </div>
           </div>
 
-          {/* Quick Nav Anchors */}
+          {/* Quick Nav Anchors (Desktop) */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-300">
-            <a href="#features" className="hover:text-teal-400 transition-colors">
-              {t('landing.key_modules', 'Key Modules')}
-            </a>
-            <a href="#leadership" className="hover:text-teal-400 transition-colors">
-              {t('landing.leadership', 'Operations Team')}
-            </a>
-            <a href="#stats" className="hover:text-teal-400 transition-colors">
-              {t('workspace.stadium_readiness', 'Facility Metrics')}
-            </a>
-            <a href="#departments" className="hover:text-teal-400 transition-colors">
-              {t('dept.administration', 'Departments')}
-            </a>
+            <a href="#gallery" className="hover:text-teal-400 transition-colors">{t('landing_nav_gallery')}</a>
+            <a href="#features" className="hover:text-teal-400 transition-colors">{t('landing_nav_modules')}</a>
+            <a href="#leadership" className="hover:text-teal-400 transition-colors">{t('landing_nav_team')}</a>
+            <a href="#stats" className="hover:text-teal-400 transition-colors">{t('landing_nav_metrics')}</a>
+            <a href="#departments" className="hover:text-teal-400 transition-colors">{t('landing_nav_departments')}</a>
           </nav>
 
           {/* Action Area */}
-          <div className="flex items-center gap-3">
-            {/* Language Selector Dropdown */}
-            <LanguageSelector variant="landing" />
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Replay Intro Spinner */}
+            {onReplayIntro && (
+              <button
+                type="button"
+                onClick={onReplayIntro}
+                className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-xs transition-colors cursor-pointer"
+                title="Replay Stadium Loading Intro"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                <span>Intro</span>
+              </button>
+            )}
 
-            {/* Get Started Button (Primary CTA) */}
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
+            {/* Get Started Button (Primary CTA — Opens Staff Login Portal) */}
             <button
               onClick={onGetStarted}
-              className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-teal-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer active:translate-y-0"
+              className="px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-teal-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer active:translate-y-0 whitespace-nowrap shrink-0 min-h-[36px]"
+              title="Get Started and Sign In to Staff Portal"
             >
-              <span>{t('action.get_started', 'Get Started')}</span>
-              <ArrowRight className="w-4 h-4" />
+              <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>{t('landing_get_started')}</span>
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            </button>
+
+            {/* Mobile Hamburger Navigation Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+              className="md:hidden p-2 text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center active:scale-95"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileNavOpen ? <X className="w-5 h-5 text-teal-400" /> : <Menu className="w-5 h-5 text-teal-400" />}
             </button>
           </div>
+        </div>
+
+        {/* Mobile Expanded Drawer Menu */}
+        {isMobileNavOpen && (
+          <div className="md:hidden bg-slate-900/98 border-b border-slate-800 px-4 py-4 space-y-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
+              <span>Landing Navigation Menu</span>
+              <span className="text-teal-400">GCS Operations</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs font-medium">
+              <a
+                href="#gallery"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/60 active:scale-98 transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-teal-400 shrink-0" />
+                <span>{t('landing_nav_gallery')}</span>
+              </a>
+              <a
+                href="#features"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/60 active:scale-98 transition-all"
+              >
+                <BarChart3 className="w-4 h-4 text-teal-400 shrink-0" />
+                <span>{t('landing_nav_modules')}</span>
+              </a>
+              <a
+                href="#leadership"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/60 active:scale-98 transition-all"
+              >
+                <Users className="w-4 h-4 text-teal-400 shrink-0" />
+                <span>{t('landing_nav_team')}</span>
+              </a>
+              <a
+                href="#stats"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/60 active:scale-98 transition-all"
+              >
+                <Award className="w-4 h-4 text-teal-400 shrink-0" />
+                <span>{t('landing_nav_metrics')}</span>
+              </a>
+              <a
+                href="#departments"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700/60 col-span-2 active:scale-98 transition-all"
+              >
+                <Building2 className="w-4 h-4 text-teal-400 shrink-0" />
+                <span>{t('landing_nav_departments')}</span>
+              </a>
+            </div>
+
+            {/* Primary Mobile Action Buttons */}
+            <div className="pt-2 border-t border-slate-800 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavOpen(false);
+                  onGetStarted();
+                }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 active:scale-98 transition-all"
+              >
+                <LogIn className="w-4 h-4 text-teal-200" />
+                <span>{t('landing_get_started')} (Staff Portal)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              {onReplayIntro && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileNavOpen(false);
+                    onReplayIntro();
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4 text-teal-400" />
+                  <span>Replay Stadium Intro Spinner</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Horizontal Quick Nav Chips Bar */}
+        <div className="md:hidden bg-slate-950/95 border-b border-slate-800/80 px-3 py-2 overflow-x-auto flex items-center gap-2 text-xs text-slate-300 scrollbar-none touch-manipulation">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 shrink-0 pr-1">
+            Jump to:
+          </span>
+          <a
+            href="#gallery"
+            className="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 font-medium whitespace-nowrap shrink-0 hover:bg-slate-800 hover:border-teal-500/50 transition-colors"
+          >
+            📸 {t('landing_nav_gallery')}
+          </a>
+          <a
+            href="#features"
+            className="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 font-medium whitespace-nowrap shrink-0 hover:bg-slate-800 hover:border-teal-500/50 transition-colors"
+          >
+            ⚡ {t('landing_nav_modules')}
+          </a>
+          <a
+            href="#leadership"
+            className="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 font-medium whitespace-nowrap shrink-0 hover:bg-slate-800 hover:border-teal-500/50 transition-colors"
+          >
+            👥 {t('landing_nav_team')}
+          </a>
+          <a
+            href="#stats"
+            className="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 font-medium whitespace-nowrap shrink-0 hover:bg-slate-800 hover:border-teal-500/50 transition-colors"
+          >
+            📊 {t('landing_nav_metrics')}
+          </a>
+          <a
+            href="#departments"
+            className="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 font-medium whitespace-nowrap shrink-0 hover:bg-slate-800 hover:border-teal-500/50 transition-colors"
+          >
+            🏛️ {t('landing_nav_departments')}
+          </a>
         </div>
       </header>
 
@@ -117,21 +351,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {/* Rwandan Flag & Official Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-teal-500/30 text-teal-300 text-xs font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>{t('landing.hero_badge', 'Official Ground Operations · Kigali, Rwanda')}</span>
+                <span>{t('landing_hero_badge')}</span>
+                <span className="text-slate-500">|</span>
+                <span className="text-slate-300">Gahanga, Kigali</span>
               </div>
 
               {/* Main Heading */}
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                {t('landing.hero_title_1', 'World-Class')}{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-300 to-amber-300">
-                  {t('landing.hero_title_accent', 'Cricket Stadium')}
-                </span>{' '}
-                {t('landing.hero_title_2', 'Operations & Logistics Nerve Center')}
+                {t('landing_hero_title')}
               </h1>
 
               {/* Subtitle */}
               <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
-                {t('landing.hero_desc', 'The centralized operational suite for Gahanga Cricket Stadium. Manage pitch preparation, match day schedules, inventory control, and staff execution under Cricket Operations Manager Hagenimana Damascene.')}
+                {t('landing_hero_sub')}
               </p>
 
               {/* Action Buttons */}
@@ -140,7 +372,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={onGetStarted}
                   className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
                 >
-                  <span>{t('action.get_started', 'Get Started Now')}</span>
+                  <LogIn className="w-5 h-5 text-teal-200" />
+                  <span>{t('landing_get_started_now')}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
 
@@ -149,7 +382,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   className="px-5 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <CheckSquare className="w-4 h-4 text-teal-400" />
-                  <span>{t('nav.tasks', 'View Daily Operational Tasks')}</span>
+                  <span>{t('landing_view_tasks')}</span>
                 </button>
               </div>
 
@@ -172,29 +405,119 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Right Column: High-Impact Visual Stadium Card */}
             <div className="lg:col-span-5">
-              <div className="relative group">
+              <div 
+                className="relative group"
+                onMouseEnter={() => setIsLiveHovered(true)}
+                onMouseLeave={() => setIsLiveHovered(false)}
+              >
                 {/* Glow ring */}
                 <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-teal-500/40 via-emerald-500/30 to-amber-500/30 blur-lg opacity-70 group-hover:opacity-100 transition duration-500"></div>
 
                 <div className="relative rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-2xl">
-                  {/* Real Stadium Photography */}
-                  <div className="relative h-60 sm:h-72 w-full overflow-hidden">
-                    <img 
-                      src={stadiumHeroImg} 
-                      alt="Gahanga Cricket Stadium Kigali Rwanda" 
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                  {/* Dynamic Multi-Photo Stadium Live Hub Slider */}
+                  <div className="relative h-64 sm:h-76 w-full overflow-hidden select-none bg-slate-950">
+                    {/* Slide Images with Smooth Crossfade */}
+                    {LIVE_HUB_SLIDES.map((slide, idx) => {
+                      const isActive = idx === liveSlideIdx;
+                      return (
+                        <div
+                          key={slide.id}
+                          className={`absolute inset-0 transition-all duration-700 ease-in-out ${
+                            isActive
+                              ? 'opacity-100 scale-100 z-10'
+                              : 'opacity-0 scale-105 pointer-events-none z-0'
+                          }`}
+                        >
+                          <img 
+                            src={slide.src} 
+                            alt={slide.title} 
+                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" 
+                          />
+                        </div>
+                      );
+                    })}
 
-                    {/* Badge on photo */}
-                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-slate-950/80 backdrop-blur-md border border-slate-700/80 text-[11px] font-semibold text-teal-300 flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Host of ICC World Cup Qualifiers</span>
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10 pointer-events-none"></div>
+
+                    {/* Top Overlay: Dynamic Badge & Play/Pause Counter Controls */}
+                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
+                      {/* Dynamic Badge */}
+                      <div className="px-2.5 py-1 rounded-md bg-slate-950/85 backdrop-blur-md border border-slate-700/80 text-[11px] font-semibold text-teal-300 flex items-center gap-1.5 shadow-md">
+                        <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span className="truncate max-w-[170px] sm:max-w-[220px]">{currentLiveSlide.badge}</span>
+                      </div>
+
+                      {/* Play/Pause & Counter Controls */}
+                      <div className="flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-2 py-0.5 rounded-md text-[10px] text-slate-300 font-mono shadow-md">
+                        <button
+                          type="button"
+                          onClick={() => setIsLivePlaying(!isLivePlaying)}
+                          className="text-slate-300 hover:text-white transition-colors cursor-pointer"
+                          title={isLivePlaying ? "Pause Auto-Slide" : "Play Auto-Slide"}
+                          aria-label={isLivePlaying ? "Pause auto-slide" : "Play auto-slide"}
+                        >
+                          {isLivePlaying ? <Pause className="w-3 h-3 text-teal-400" /> : <Play className="w-3 h-3 text-teal-400" />}
+                        </button>
+                        <span>{liveSlideIdx + 1}/{LIVE_HUB_SLIDES.length}</span>
+                      </div>
                     </div>
 
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-200">
-                      <span className="font-semibold text-white drop-shadow-md">Gahanga International Oval</span>
-                      <span className="bg-emerald-500/80 text-white font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">LIVE HUB</span>
+                    {/* Navigation Arrow Controls */}
+                    <div className="absolute inset-y-0 left-2 right-2 flex items-center justify-between z-20 pointer-events-none">
+                      <button
+                        type="button"
+                        onClick={handlePrevLiveSlide}
+                        className="p-1.5 rounded-full bg-slate-950/70 hover:bg-slate-900 border border-slate-700/80 text-white backdrop-blur-xs pointer-events-auto transition-transform hover:scale-110 active:scale-95 shadow-md cursor-pointer"
+                        title="Previous Stadium Slide"
+                        aria-label="Previous Stadium Slide"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-teal-300" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNextLiveSlide}
+                        className="p-1.5 rounded-full bg-slate-950/70 hover:bg-slate-900 border border-slate-700/80 text-white backdrop-blur-xs pointer-events-auto transition-transform hover:scale-110 active:scale-95 shadow-md cursor-pointer"
+                        title="Next Stadium Slide"
+                        aria-label="Next Stadium Slide"
+                      >
+                        <ChevronRight className="w-4 h-4 text-teal-300" />
+                      </button>
+                    </div>
+
+                    {/* Bottom Dynamic Caption & LIVE HUB Badge */}
+                    <div className="absolute bottom-4 left-3 right-3 flex items-end justify-between gap-2 z-20">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-semibold text-white drop-shadow-md text-xs sm:text-sm block truncate">
+                          {currentLiveSlide.title}
+                        </span>
+                        <span className="text-[10px] text-teal-300/90 block truncate">
+                          {currentLiveSlide.subtitle}
+                        </span>
+                      </div>
+
+                      {/* Dynamic LIVE HUB Badge with pulsing LED beacon */}
+                      <div className="flex items-center gap-1.5 bg-emerald-950/90 backdrop-blur-md text-emerald-300 font-mono text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/60 font-bold shadow-lg shrink-0">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>LIVE HUB</span>
+                      </div>
+                    </div>
+
+                    {/* Slide Dots Indicator */}
+                    <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1.5 z-20">
+                      {LIVE_HUB_SLIDES.map((_, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setLiveSlideIdx(idx)}
+                          className={`transition-all duration-300 cursor-pointer ${
+                            idx === liveSlideIdx
+                              ? 'w-5 h-1 bg-teal-400 rounded-full shadow-xs'
+                              : 'w-1.5 h-1 bg-white/40 hover:bg-white/80 rounded-full'
+                          }`}
+                          aria-label={`Go to slide ${idx + 1}`}
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -202,7 +525,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="p-4 sm:p-5 space-y-3 bg-slate-900">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                       <div>
-                        <span className="text-[11px] text-slate-400 block">Cricket Operations Manager</span>
+                        <span className="text-[11px] text-slate-400 block">{t('role_manager')}</span>
                         <span className="text-sm font-bold text-slate-100">Hagenimana Damascene</span>
                       </div>
                       <span className="px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-300 border border-teal-500/20 text-xs font-medium">
@@ -212,15 +535,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
                       <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Live Tasks</span>
+                        <span className="text-slate-400 text-[10px] block">{t('landing_live_tasks')}</span>
                         <span className="text-teal-400 font-bold font-mono text-sm">{totalTasksCount}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Stores Tracked</span>
+                        <span className="text-slate-400 text-[10px] block">{t('landing_stores_tracked')}</span>
                         <span className="text-emerald-400 font-bold font-mono text-sm">{inventoryItemCount}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Staff & Officials</span>
+                        <span className="text-slate-400 text-[10px] block">{t('landing_staff_officials')}</span>
                         <span className="text-amber-400 font-bold font-mono text-sm">{staffCount}</span>
                       </div>
                     </div>
@@ -230,7 +553,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       onClick={onGetStarted}
                       className="w-full mt-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700/80 text-teal-300 hover:text-white border border-teal-500/30 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <span>Enter Operational Home Page</span>
+                      <span>{t('landing_enter_home')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -249,27 +572,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 font-mono">
                 100%
               </span>
-              <p className="text-xs text-slate-400 font-medium">Activity Logged & Timestamped</p>
+              <p className="text-xs text-slate-400 font-medium">{t('landing_stat_activity')}</p>
             </div>
             <div className="space-y-1">
               <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 font-mono">
                 5
               </span>
-              <p className="text-xs text-slate-400 font-medium">Key Operational Departments</p>
+              <p className="text-xs text-slate-400 font-medium">{t('landing_stat_departments')}</p>
             </div>
             <div className="space-y-1">
               <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-amber-300 font-mono">
                 2,500+
               </span>
-              <p className="text-xs text-slate-400 font-medium">Stadium Spectator Capacity</p>
+              <p className="text-xs text-slate-400 font-medium">{t('landing_stat_capacity')}</p>
             </div>
             <div className="space-y-1">
               <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-teal-400 font-mono">
                 24/7
               </span>
-              <p className="text-xs text-slate-400 font-medium">LocalStorage Data Integrity</p>
+              <p className="text-xs text-slate-400 font-medium">{t('landing_stat_storage')}</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Stadium Gallery & Visual Multi-Slider Section */}
+      <section id="gallery" className="py-16 sm:py-20 bg-slate-900/40 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                <span>Multi-Category Photo Sliders & Cloud Stream</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                {t('landing_gallery_title')}
+              </h2>
+              <p className="text-sm text-slate-400 max-w-2xl">
+                {t('landing_gallery_sub')}
+              </p>
+            </div>
+          </div>
+
+          {/* Interactive Multi-Slider with Internet Fetching & Offline Caching */}
+          <StadiumImageSlider
+            aspectRatio="cinema"
+            showThumbnails={true}
+            showCaptions={true}
+            allowCategoryFilter={true}
+            allowOnlineFetch={true}
+          />
         </div>
       </section>
 
@@ -278,13 +630,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
-              System Architecture & Modules
+              {t('landing_features_badge')}
             </span>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-              Integrated Operations for Stadium & Cricket Success
+              {t('landing_features_title')}
             </h2>
             <p className="text-sm sm:text-base text-slate-400">
-              From pitch curating to ICC match protocol compliance, GCS coordinates all ground activities in a single platform.
+              {t('landing_features_sub')}
             </p>
           </div>
 
@@ -296,17 +648,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <BarChart3 className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-teal-300 transition-colors">
-                  Visual Operational Analytics
+                  {t('landing_card_analytics_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Interactive Recharts bar visualizations monitoring completion rates across urgency levels and task workflow statuses.
+                  {t('landing_card_analytics_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('workspace') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-400 hover:text-teal-300 cursor-pointer"
               >
-                <span>Open Analytics Workspace</span>
+                <span>{t('landing_card_analytics_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -318,17 +670,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <CheckSquare className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
-                  Task Execution & Reports
+                  {t('landing_card_tasks_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Structured groundskeeper reports with pitch conditions, photo records, weather tracking, and instant submission confirmation feedback.
+                  {t('landing_card_tasks_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('tasks') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 cursor-pointer"
               >
-                <span>View Task Management</span>
+                <span>{t('landing_card_tasks_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -340,17 +692,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <Package className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                  Equipment & Stores Logistics
+                  {t('landing_card_inventory_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Real-time inventory of cricket gear, pitch rollers, fertilizers, match balls, boundary ropes with automated minimum thresholds.
+                  {t('landing_card_inventory_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('inventory') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 cursor-pointer"
               >
-                <span>Access Inventory Hub</span>
+                <span>{t('landing_card_inventory_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -362,17 +714,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <Building2 className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
-                  Stadium Oval & Facilities
+                  {t('landing_card_facility_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Direct oversight over Main Ground Oval, Practice Net Enclosures, Media Center, VIP Pavilion, and Player Dressing Rooms.
+                  {t('landing_card_facility_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('facility') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 cursor-pointer"
               >
-                <span>Explore Stadium Facilities</span>
+                <span>{t('landing_card_facility_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -384,17 +736,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <Users className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-violet-300 transition-colors">
-                  Staff Directory & Dossiers
+                  {t('landing_card_directory_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Comprehensive personnel profiles featuring marital status, education, evaluation tiers, experience years, photo editing, and avatar studio.
+                  {t('landing_card_directory_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('directory') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 cursor-pointer"
               >
-                <span>View Staff Directory</span>
+                <span>{t('landing_card_directory_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -406,17 +758,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-rose-300 transition-colors">
-                  System Activity & Audit Log
+                  {t('landing_card_audit_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Immutable audit records tracking every submission, approval, stock issue, and profile update with date/time stamps and actor identities.
+                  {t('landing_card_audit_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('audit') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-rose-400 hover:text-rose-300 cursor-pointer"
               >
-                <span>Inspect Audit Records</span>
+                <span>{t('landing_card_audit_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -428,17 +780,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <Calendar className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                  Stadium & Fixture Calendar
+                  {t('landing_card_calendar_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Full operational calendar with Month, Week, and Agenda views for match fixtures, pitch moisture rolling, trainings, and Google Calendar / .ics export.
+                  {t('landing_card_calendar_desc')}
                 </p>
               </div>
               <button
                 onClick={() => onExploreSection ? onExploreSection('calendar') : onGetStarted()}
                 className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 cursor-pointer"
               >
-                <span>Open Stadium Calendar</span>
+                <span>{t('landing_card_calendar_btn')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -452,14 +804,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-teal-400 block mb-1">
-                Operational Divisions
+                {t('landing_nav_departments')}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                5 Coordinated Operational Departments
+                {t('landing_departments_title')}
               </h2>
             </div>
             <p className="text-xs text-slate-400 max-w-md">
-              Specialized departments ensuring seamless alignment between administrative planning, academy teaching, cricket coaching, and official ICC match umpiring.
+              {t('landing_departments_sub')}
             </p>
           </div>
 
@@ -538,7 +890,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <h3 className="mt-5 text-xl font-bold text-white">Hagenimana Damascene</h3>
-                <p className="text-xs text-teal-400 font-medium">Cricket Operations Manager</p>
+                <p className="text-xs text-teal-400 font-medium">{t('role_manager')}</p>
                 <p className="text-[11px] text-slate-400 mt-1">GCS Kigali · Rwanda Cricket Association</p>
               </div>
 
@@ -550,11 +902,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <h4 className="text-xl sm:text-2xl font-bold text-white">
-                  "Excellence on the pitch begins with disciplined operational infrastructure."
+                  {t('landing_leader_quote')}
                 </h4>
 
                 <p className="text-sm text-slate-300 leading-relaxed">
-                  Leading a dedicated Rwandan operational cohort, Hagenimana oversees every phase of stadium preparation—from pitch moisture content and heavy roller passes to floodlight maintenance and inventory replenishment. Under his stewardship, GCS maintains the highest international standard for players, visiting national teams, and cricket fans worldwide.
+                  {t('landing_leader_bio')}
                 </p>
 
                 <div className="pt-2 flex flex-wrap items-center gap-3">
@@ -562,7 +914,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={onGetStarted}
                     className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer"
                   >
-                    <span>Launch Operations with Damascene</span>
+                    <span>{t('landing_leader_btn_launch')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
 
@@ -571,7 +923,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <Users className="w-3.5 h-3.5 text-teal-400" />
-                    <span>Meet the Complete African Staff Roster</span>
+                    <span>{t('landing_leader_btn_team')}</span>
                   </button>
                 </div>
               </div>
@@ -586,17 +938,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Large Call-out Box */}
           <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-teal-950/60 via-slate-900 to-emerald-950/60 border border-teal-500/30 text-center space-y-5">
             <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Ready to Oversee Stadium Operations?
+              {t('landing_footer_cta_title')}
             </h3>
             <p className="text-sm text-slate-300 max-w-xl mx-auto">
-              Access the live Home Workspace with real-time task workflows, store tracking, and analytics dashboards.
+              {t('landing_footer_cta_sub')}
             </p>
             <div className="pt-2">
               <button
                 onClick={onGetStarted}
                 className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold text-base inline-flex items-center gap-2.5 shadow-xl shadow-teal-500/30 transition-transform hover:scale-105 cursor-pointer"
               >
-                <span>Get Started — Enter Home Workspace</span>
+                <span>{t('landing_footer_cta_btn')}</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>

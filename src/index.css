@@ -139,3 +139,151 @@ body {
 [data-theme="light"] textarea::placeholder {
   color: #94a3b8 !important;
 }
+
+/* Google Translate & GTranslate Clean Layout Overrides */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-simple,
+#goog-gt-tt,
+.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.goog-text-highlight {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+/* ==========================================================================
+   SAFE AREA INSET RESPONSIVE UTILITY SYSTEM
+   Provides pixel-perfect padding, margin, inset, and height adjustments
+   for mobile notch displays (Dynamic Island, camera punch-holes)
+   and bottom navigation overlap areas (iOS Home Indicator, Android navigation bars).
+   ========================================================================== */
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Padding utilities */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.py-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.p-safe {
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+/* Additive padding utilities (base spacing + safe area inset) */
+.pt-safe-offset-1 {
+  padding-top: calc(0.25rem + env(safe-area-inset-top, 0px));
+}
+.pt-safe-offset-2 {
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+}
+.pt-safe-offset-3 {
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+}
+.pt-safe-offset-4 {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+.pb-safe-offset-1 {
+  padding-bottom: calc(0.25rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-offset-2 {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-offset-3 {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-offset-4 {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-offset-6 {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-offset-8 {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Margin utilities */
+.mt-safe {
+  margin-top: env(safe-area-inset-top, 0px);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+.ml-safe {
+  margin-left: env(safe-area-inset-left, 0px);
+}
+.mr-safe {
+  margin-right: env(safe-area-inset-right, 0px);
+}
+.mx-safe {
+  margin-left: env(safe-area-inset-left, 0px);
+  margin-right: env(safe-area-inset-right, 0px);
+}
+.my-safe {
+  margin-top: env(safe-area-inset-top, 0px);
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mb-safe-offset-2 {
+  margin-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+.mb-safe-offset-4 {
+  margin-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Positioning & Inset utilities */
+.top-safe {
+  top: env(safe-area-inset-top, 0px);
+}
+.bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+.left-safe {
+  left: env(safe-area-inset-left, 0px);
+}
+.right-safe {
+  right: env(safe-area-inset-right, 0px);
+}
+
+/* Safe Screen Height utilities */
+.h-safe-screen {
+  height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+.min-h-safe-screen {
+  min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+

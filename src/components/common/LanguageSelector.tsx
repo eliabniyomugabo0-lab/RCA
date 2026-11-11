@@ -83,7 +83,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-800">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-xs sm:w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-800">
           {/* Header */}
           <div className="px-3.5 py-2">
             <div className="flex items-center justify-between">

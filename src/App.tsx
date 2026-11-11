@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Role, 
   User, 
@@ -11,8 +11,18 @@ import {
   InAppNotification, 
   AuditLogEntry,
   ThemeMode,
-  CalendarEvent
+  CalendarEvent,
+  Language
 } from './types';
+import { useLanguage } from './i18n/LanguageContext';
+import { 
+  translateTasks, 
+  translateMessages, 
+  translateAnnouncements, 
+  translateCalendarEvents, 
+  translateNotifications,
+  translateInventory
+} from './i18n/contentTranslator';
 import { 
   DEMO_USERS, 
   INITIAL_TASKS, 
@@ -27,8 +37,9 @@ import {
 import { INITIAL_CALENDAR_EVENTS } from './data/calendarData';
 import { loadFromStorage, saveToStorage, clearGCSStorage } from './utils/storage';
 import { Navbar } from './components/layout/Navbar';
-import { Sidebar, NavSection } from './components/layout/Sidebar';
+import { Sidebar, NavSection, isSectionAuthorizedForRole } from './components/layout/Sidebar';
 import { ManagerWorkspace } from './components/workspace/ManagerWorkspace';
+import { OperationsDashboard } from './components/dashboard/OperationsDashboard';
 import { TaskManager } from './components/tasks/TaskManager';
 import { StadiumCalendar } from './components/calendar/StadiumCalendar';
 import { InventoryHub } from './components/inventory/InventoryHub';
@@ -38,13 +49,27 @@ import { CommunicationHub } from './components/communication/CommunicationHub';
 import { AuditLogViewer } from './components/audit/AuditLogViewer';
 import { RolePermissionsMatrix } from './components/roles/RolePermissionsMatrix';
 import { UserProfileModal } from './components/profile/UserProfileModal';
+import { LoginModal } from './components/auth/LoginModal';
+import { LoginPage } from './components/auth/LoginPage';
 import { LandingPage } from './components/landing/LandingPage';
+import { InitialLoadingScreen } from './components/common/InitialLoadingScreen';
 import { ToastContainer, ToastMessage } from './components/common/Toast';
-import { RotateCcw, Globe } from 'lucide-react';
-import { useTranslation } from './context/LanguageContext';
+import { 
+  RotateCcw, 
+  Globe, 
+  LayoutDashboard, 
+  BarChart3, 
+  CheckSquare, 
+  Calendar as CalendarIcon, 
+  Package, 
+  Menu,
+  ShieldAlert,
+  LogIn,
+  Users,
+  Megaphone
+} from 'lucide-react';
 
 export default function App() {
-  const { t } = useTranslation();
   // Theme state with localStorage synchronization
   const [currentTheme, setCurrentTheme] = useState<ThemeMode>(() => {
     return (loadFromStorage('gcs_theme', 'navy') as ThemeMode) || 'navy';
@@ -73,54 +98,167 @@ export default function App() {
 
   const [currentSection, setCurrentSection] = useState<NavSection>('workspace');
 
-  const [tasks, setTasks] = useState<Task[]>(() => 
-    loadFromStorage('gcs_tasks', INITIAL_TASKS)
-  );
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const raw = loadFromStorage('gcs_tasks', INITIAL_TASKS);
+    const lang = loadFromStorage<Language>('gcs_language', 'en');
+    return lang !== 'en' ? translateTasks(raw, lang) : raw;
+  });
 
-  const [inventory, setInventory] = useState<InventoryItem[]>(() => 
-    loadFromStorage('gcs_inventory', INITIAL_INVENTORY)
-  );
+  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
+    const raw = loadFromStorage('gcs_inventory', INITIAL_INVENTORY);
+    // Reconcile names & categories so legacy verbose strings in cache are updated to simplified terms
+    const sanitized = raw.map((item: InventoryItem) => {
+      const match = INITIAL_INVENTORY.find((i) => i.id === item.id);
+      if (match) {
+        return {
+          ...item,
+          name: match.name,
+          category: match.category,
+          description: match.description,
+          sku: match.sku
+        };
+      }
+      return item;
+    });
+    const lang = loadFromStorage<Language>('gcs_language', 'en');
+    return lang !== 'en' ? translateInventory(sanitized, lang) : sanitized;
+  });
 
-  const [movements, setMovements] = useState<StockMovement[]>(() => 
-    loadFromStorage('gcs_movements', INITIAL_MOVEMENTS)
-  );
+  const [movements, setMovements] = useState<StockMovement[]>(() => {
+    const raw = loadFromStorage('gcs_movements', INITIAL_MOVEMENTS);
+    return raw.map((m: StockMovement) => {
+      const match = INITIAL_INVENTORY.find((i) => i.id === m.itemId);
+      return match ? { ...m, itemName: match.name, itemSku: match.sku } : m;
+    });
+  });
 
-  const [requests, setRequests] = useState<StockRequest[]>(() => 
-    loadFromStorage('gcs_requests', INITIAL_REQUESTS)
-  );
+  const [requests, setRequests] = useState<StockRequest[]>(() => {
+    const raw = loadFromStorage('gcs_requests', INITIAL_REQUESTS);
+    return raw.map((r: StockRequest) => ({
+      ...r,
+      items: r.items.map((it) => {
+        const match = INITIAL_INVENTORY.find((i) => i.id === it.itemId);
+        return match ? { ...it, itemName: match.name } : it;
+      })
+    }));
+  });
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>(() => 
-    loadFromStorage('gcs_announcements', INITIAL_ANNOUNCEMENTS)
-  );
+  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
+    const raw = loadFromStorage('gcs_announcements', INITIAL_ANNOUNCEMENTS);
+    const lang = loadFromStorage<Language>('gcs_language', 'en');
+    return lang !== 'en' ? translateAnnouncements(raw, lang) : raw;
+  });
 
-  const [messages, setMessages] = useState<DirectMessage[]>(() => 
-    loadFromStorage('gcs_messages', INITIAL_MESSAGES)
-  );
+  const [messages, setMessages] = useState<DirectMessage[]>(() => {
+    const raw = loadFromStorage('gcs_messages', INITIAL_MESSAGES);
+    const lang = loadFromStorage<Language>('gcs_language', 'en');
+    return lang !== 'en' ? translateMessages(raw, lang) : raw;
+  });
 
-  const [notifications, setNotifications] = useState<InAppNotification[]>(() => 
-    loadFromStorage('gcs_notifications', INITIAL_NOTIFICATIONS)
-  );
+  const [notifications, setNotifications] = useState<InAppNotification[]>(() => {
+    const raw = loadFromStorage('gcs_notifications', INITIAL_NOTIFICATIONS);
+    const lang = loadFromStorage<Language>('gcs_language', 'en');
+    return lang !== 'en' ? translateNotifications(raw, lang) : raw;
+  });
 
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => 
     loadFromStorage('gcs_audit_logs', INITIAL_AUDIT_LOGS)
   );
 
-  const [events, setEvents] = useState<CalendarEvent[]>(() => 
-    loadFromStorage('gcs_calendar_events', INITIAL_CALENDAR_EVENTS)
-  );
+  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+    const raw = loadFromStorage('gcs_calendar_events', INITIAL_CALENDAR_EVENTS);
+    const lang = loadFromStorage<Language>('gcs_language', 'en');
+    return lang !== 'en' ? translateCalendarEvents(raw, lang) : raw;
+  });
 
-  // UI state
-  const [isLandingPage, setIsLandingPage] = useState<boolean>(() => 
-    loadFromStorage('gcs_show_landing', true)
-  );
+  // Loading screen state (displays attractive kinetic stadium spinner on first boot)
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // UI state: First page reached after loading is guaranteed to be the Landing Page
+  const [isLandingPage, setIsLandingPage] = useState<boolean>(true);
+  const [isLoginPage, setIsLoginPage] = useState<boolean>(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Targeted record states for deep navigation from Global Search
   const [targetTaskId, setTargetTaskId] = useState<string | null>(null);
   const [targetInventoryId, setTargetInventoryId] = useState<string | null>(null);
   const [targetStaffId, setTargetStaffId] = useState<string | null>(null);
+
+  const { language, t } = useLanguage();
+  const prevLanguageRef = useRef<Language>(language);
+
+  // Automatically translate all dynamic records (tasks, comments, messages, announcements, calendar events, notifications)
+  // whenever the user switches between English, Kinyarwanda, French, or Kiswahili!
+  useEffect(() => {
+    if (prevLanguageRef.current === language) return;
+    prevLanguageRef.current = language;
+
+    // 1. Translate Tasks (titles, descriptions, comments, deliverables, reports)
+    setTasks((currentTasks) => {
+      const translated = translateTasks(currentTasks, language);
+      saveToStorage('gcs_tasks', translated);
+      return translated;
+    });
+
+    // 2. Translate Direct Messages
+    setMessages((currentMsgs) => {
+      const translated = translateMessages(currentMsgs, language);
+      saveToStorage('gcs_messages', translated);
+      return translated;
+    });
+
+    // 3. Translate Announcements
+    setAnnouncements((currentAncs) => {
+      const translated = translateAnnouncements(currentAncs, language);
+      saveToStorage('gcs_announcements', translated);
+      return translated;
+    });
+
+    // 4. Translate Calendar Events
+    setEvents((currentEvts) => {
+      const translated = translateCalendarEvents(currentEvts, language);
+      saveToStorage('gcs_calendar_events', translated);
+      return translated;
+    });
+
+    // 5. Translate Notifications
+    setNotifications((currentNotifs) => {
+      const translated = translateNotifications(currentNotifs, language);
+      saveToStorage('gcs_notifications', translated);
+      return translated;
+    });
+
+    // 6. Translate Inventory Items
+    setInventory((currentInv) => {
+      const translated = translateInventory(currentInv, language);
+      saveToStorage('gcs_inventory', translated);
+      return translated;
+    });
+
+    const langFeedback: Record<Language, { title: string; desc: string }> = {
+      en: {
+        title: 'Language: English',
+        desc: 'All tasks, comments, messages, inventory, and announcements converted to English.'
+      },
+      rw: {
+        title: 'Ururimi: Ikinyarwanda',
+        desc: 'Imirimo yose, ibitekerezo, ibikoresho n\'ubutumwa byahinduwe mu Kinyarwanda.'
+      },
+      fr: {
+        title: 'Langue: Français',
+        desc: 'Toutes les tâches, commentaires, équipements et messages ont été traduits en français.'
+      },
+      sw: {
+        title: 'Lugha: Kiswahili',
+        desc: 'Kazi zote, maoni, vifaa vya ghala na jumbe za mfumo zimetafsiriwa kwa Kiswahili.'
+      }
+    };
+
+    const feedback = langFeedback[language] || langFeedback.en;
+    addToast('info', feedback.title, feedback.desc);
+  }, [language]);
 
   useEffect(() => {
     saveToStorage('gcs_show_landing', isLandingPage);
@@ -228,11 +366,25 @@ export default function App() {
     addToast('info', 'Workspace Palette Changed', `Switched to ${themeNames[theme]}`);
   };
 
-  // Switch role persona
+  // Switch role persona with RBAC auto-routing
   const handleSelectRole = (role: Role) => {
     const matchedUser = users.find((u) => u.role === role);
     if (matchedUser) {
       setCurrentUser(matchedUser);
+      saveToStorage('gcs_current_user_id', matchedUser.id);
+
+      // Auto-route to primary workspace if current section is restricted for the new role
+      if (!isSectionAuthorizedForRole(currentSection, matchedUser.role)) {
+        if (matchedUser.role === 'STOREKEEPER') {
+          setCurrentSection('inventory');
+        } else if (matchedUser.role === 'STAFF') {
+          setCurrentSection('tasks');
+        } else if (matchedUser.role === 'SYSTEM_ADMIN') {
+          setCurrentSection('dashboard');
+        } else {
+          setCurrentSection('workspace');
+        }
+      }
 
       logSystemActivity(
         'ROLE_PERSONA_SWITCHED',
@@ -506,13 +658,12 @@ export default function App() {
 
   const handleGetStarted = () => {
     setIsLandingPage(false);
-    setCurrentSection('workspace');
-    addToast('success', 'Welcome to GCS Operations Hub', 'Home Workspace active. Manager Hagenimana Damascene on duty.');
+    setIsLoginPage(true);
     logSystemActivity(
       'ENTER_WORKSPACE',
       'USER_ACCESS',
       currentUser.id,
-      `${currentUser.name} entered Home Operations Workspace from Landing Page`
+      `${currentUser.name} opened Staff Login Gateway from Landing Page`
     );
   };
 
@@ -564,25 +715,72 @@ export default function App() {
   };
 
   const sectionNames: Record<NavSection, string> = {
-    workspace: t('nav.workspace', 'Operations Workspace'),
-    tasks: t('nav.tasks', 'Task & Report Workflow'),
-    calendar: t('nav.calendar', 'Stadium & Fixture Calendar'),
-    inventory: t('nav.inventory', 'Store & Equipment Inventory'),
-    facility: t('nav.facility', 'Stadium Oval & Facilities'),
-    directory: t('nav.directory', 'Staff & Team Directory'),
-    communication: t('nav.communication', 'Communications & Bulletins'),
-    audit: t('nav.audit', 'Audit Trail & Compliance'),
-    roles: t('nav.roles', 'Role & Permissions Matrix')
+    workspace: 'Operations Workspace',
+    dashboard: 'Operations & Performance Analytics',
+    tasks: 'Task & Report Workflow',
+    calendar: 'Stadium & Fixture Calendar',
+    inventory: 'Store & Equipment Inventory',
+    facility: 'Stadium Oval & Facilities',
+    directory: 'Staff & Team Directory',
+    communication: 'Communications & Bulletins',
+    audit: 'Audit Trail & Compliance',
+    roles: 'Role & Permissions Matrix'
   };
 
   const pendingTasksCount = tasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS').length;
   const lowStockCount = inventory.filter((i) => i.availableQuantity <= i.reorderThreshold).length;
+
+  if (isLoading) {
+    return (
+      <InitialLoadingScreen
+        onComplete={() => {
+          setIsLoading(false);
+          setIsLandingPage(true);
+        }}
+      />
+    );
+  }
+
+  if (isLoginPage) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
+        <LoginPage
+          availableUsers={users}
+          onLogin={(user) => {
+            setCurrentUser(user);
+            saveToStorage('gcs_current_user_id', user.id);
+            setIsLoginPage(false);
+            setIsLandingPage(false);
+            if (user.role === 'STOREKEEPER') {
+              setCurrentSection('inventory');
+            } else if (user.role === 'STAFF') {
+              setCurrentSection('tasks');
+            } else if (user.role === 'SYSTEM_ADMIN') {
+              setCurrentSection('dashboard');
+            } else {
+              setCurrentSection('workspace');
+            }
+          }}
+          onBackToLanding={() => {
+            setIsLoginPage(false);
+            setIsLandingPage(true);
+          }}
+          onShowToast={addToast}
+        />
+        <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
+      </div>
+    );
+  }
 
   if (isLandingPage) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
         <LandingPage
           onGetStarted={handleGetStarted}
+          onOpenLogin={() => {
+            setIsLandingPage(false);
+            setIsLoginPage(true);
+          }}
           onExploreSection={handleExploreSectionFromLanding}
           currentUser={currentUser}
           currentTheme={currentTheme}
@@ -590,6 +788,7 @@ export default function App() {
           totalTasksCount={tasks.length}
           inventoryItemCount={inventory.length}
           staffCount={users.length}
+          onReplayIntro={() => setIsLoading(true)}
         />
         {/* Floating Toast Notification Stack */}
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
@@ -621,6 +820,7 @@ export default function App() {
         onSelectInventoryItem={handleSelectInventoryFromSearch}
         onSelectStaffUser={handleSelectStaffFromSearch}
         onSelectCalendarEvent={() => setCurrentSection('calendar')}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
       />
 
       {/* Main Workspace Frame */}
@@ -637,110 +837,169 @@ export default function App() {
           currentUser={currentUser}
           onOpenProfile={() => setIsProfileModalOpen(true)}
           onOpenLandingPage={() => setIsLandingPage(true)}
+          onSelectRole={handleSelectRole}
+          availableUsers={users}
+          currentTheme={currentTheme}
+          onSelectTheme={handleSelectTheme}
+          onOpenLoginModal={() => setIsLoginModalOpen(true)}
         />
 
         {/* Viewport Content Area */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex flex-col justify-between">
+        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-24 sm:pb-28 lg:pb-8 pb-safe-offset-8 px-safe max-w-7xl mx-auto w-full flex flex-col justify-between">
           <div>
-            {currentSection === 'workspace' && (
-              <ManagerWorkspace
-                currentUser={currentUser}
-                tasks={tasks}
-                inventory={inventory}
-                announcements={announcements}
-                requests={requests}
-                events={events}
-                onNavigateSection={setCurrentSection}
-                onOpenTaskModal={(task) => {
-                  setTargetTaskId(task.id);
-                  setCurrentSection('tasks');
-                }}
-                onOpenNewTaskModal={() => setCurrentSection('tasks')}
-                onOpenNewRequestModal={() => setCurrentSection('inventory')}
-                onOpenProfile={() => setIsProfileModalOpen(true)}
-              />
+            {!isSectionAuthorizedForRole(currentSection, currentUser.role) ? (
+              <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-8 max-w-2xl mx-auto my-12 text-center shadow-2xl backdrop-blur-md space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mx-auto flex items-center justify-center shadow-inner">
+                  <ShieldAlert className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Role-Based Access Control (RBAC) Policy
+                  </span>
+                  <h2 className="text-xl font-bold text-white">
+                    Restricted Access: {sectionNames[currentSection]}
+                  </h2>
+                  <p className="text-sm text-slate-400 max-w-md mx-auto">
+                    Your active session persona <strong className="text-slate-200">{currentUser.name}</strong> has the role <strong className="text-teal-400 font-mono">{currentUser.role}</strong>, which does not have permission to view or manage this module.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (currentUser.role === 'STOREKEEPER') setCurrentSection('inventory');
+                      else if (currentUser.role === 'STAFF') setCurrentSection('tasks');
+                      else setCurrentSection('dashboard');
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer shadow-lg shadow-teal-500/20"
+                  >
+                    Go to My Authorized Workspace
+                  </button>
+                  <button
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs border border-slate-700 transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <LogIn className="w-4 h-4 text-slate-400" />
+                    Authenticate with Authorized Role
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {currentSection === 'workspace' && (
+                  <ManagerWorkspace
+                    currentUser={currentUser}
+                    tasks={tasks}
+                    inventory={inventory}
+                    announcements={announcements}
+                    requests={requests}
+                    events={events}
+                    onNavigateSection={setCurrentSection}
+                    onOpenTaskModal={(task) => {
+                      setTargetTaskId(task.id);
+                      setCurrentSection('tasks');
+                    }}
+                    onOpenNewTaskModal={() => setCurrentSection('tasks')}
+                    onOpenNewRequestModal={() => setCurrentSection('inventory')}
+                    onOpenProfile={() => setIsProfileModalOpen(true)}
+                  />
+                )}
+
+                {currentSection === 'dashboard' && (
+                  <OperationsDashboard
+                    tasks={tasks}
+                    inventory={inventory}
+                    movements={movements}
+                    events={events}
+                    users={users}
+                    currentUser={currentUser}
+                    onNavigateSection={setCurrentSection}
+                    onShowToast={addToast}
+                  />
+                )}
+
+                {currentSection === 'tasks' && (
+                  <TaskManager
+                    currentUser={currentUser}
+                    tasks={tasks}
+                    users={users}
+                    onUpdateTask={handleUpdateTask}
+                    onCreateTask={handleCreateTask}
+                    onShowToast={addToast}
+                    initialTaskId={targetTaskId}
+                  />
+                )}
+
+                {currentSection === 'calendar' && (
+                  <StadiumCalendar
+                    events={events}
+                    tasks={tasks}
+                    users={users}
+                    currentUser={currentUser}
+                    onAddEvent={handleAddCalendarEvent}
+                    onUpdateEvent={handleUpdateCalendarEvent}
+                    onDeleteEvent={handleDeleteCalendarEvent}
+                    onNavigateToTask={(taskId) => {
+                      setTargetTaskId(taskId);
+                      setCurrentSection('tasks');
+                    }}
+                    onShowToast={addToast}
+                  />
+                )}
+
+                {currentSection === 'inventory' && (
+                  <InventoryHub
+                    currentUser={currentUser}
+                    inventory={inventory}
+                    movements={movements}
+                    requests={requests}
+                    onUpdateInventory={handleUpdateInventory}
+                    onAddStockRequest={handleAddStockRequest}
+                    onShowToast={addToast}
+                    initialItemId={targetInventoryId}
+                  />
+                )}
+
+                {currentSection === 'facility' && <StadiumFacilityView />}
+
+                {currentSection === 'directory' && (
+                  <StaffDirectory
+                    users={users}
+                    currentUser={currentUser}
+                    onOpenProfile={() => setIsProfileModalOpen(true)}
+                    onOpenMessageWithUser={() => setCurrentSection('communication')}
+                    initialUserId={targetStaffId}
+                  />
+                )}
+
+                {currentSection === 'communication' && (
+                  <CommunicationHub
+                    currentUser={currentUser}
+                    announcements={announcements}
+                    messages={messages}
+                    users={users}
+                    onAddAnnouncement={handleAddAnnouncement}
+                    onSendMessage={handleSendMessage}
+                    onShowToast={addToast}
+                  />
+                )}
+
+                {currentSection === 'audit' && (
+                  <AuditLogViewer logs={auditLogs} onShowToast={addToast} />
+                )}
+
+                {currentSection === 'roles' && <RolePermissionsMatrix />}
+              </>
             )}
-
-            {currentSection === 'tasks' && (
-              <TaskManager
-                currentUser={currentUser}
-                tasks={tasks}
-                users={users}
-                onUpdateTask={handleUpdateTask}
-                onCreateTask={handleCreateTask}
-                onShowToast={addToast}
-                initialTaskId={targetTaskId}
-              />
-            )}
-
-            {currentSection === 'calendar' && (
-              <StadiumCalendar
-                events={events}
-                tasks={tasks}
-                users={users}
-                currentUser={currentUser}
-                onAddEvent={handleAddCalendarEvent}
-                onUpdateEvent={handleUpdateCalendarEvent}
-                onDeleteEvent={handleDeleteCalendarEvent}
-                onNavigateToTask={(taskId) => {
-                  setTargetTaskId(taskId);
-                  setCurrentSection('tasks');
-                }}
-                onShowToast={addToast}
-              />
-            )}
-
-            {currentSection === 'inventory' && (
-              <InventoryHub
-                currentUser={currentUser}
-                inventory={inventory}
-                movements={movements}
-                requests={requests}
-                onUpdateInventory={handleUpdateInventory}
-                onAddStockRequest={handleAddStockRequest}
-                onShowToast={addToast}
-                initialItemId={targetInventoryId}
-              />
-            )}
-
-            {currentSection === 'facility' && <StadiumFacilityView />}
-
-            {currentSection === 'directory' && (
-              <StaffDirectory
-                users={users}
-                currentUser={currentUser}
-                onOpenProfile={() => setIsProfileModalOpen(true)}
-                onOpenMessageWithUser={() => setCurrentSection('communication')}
-                initialUserId={targetStaffId}
-              />
-            )}
-
-            {currentSection === 'communication' && (
-              <CommunicationHub
-                currentUser={currentUser}
-                announcements={announcements}
-                messages={messages}
-                users={users}
-                onAddAnnouncement={handleAddAnnouncement}
-                onSendMessage={handleSendMessage}
-                onShowToast={addToast}
-              />
-            )}
-
-            {currentSection === 'audit' && (
-              <AuditLogViewer logs={auditLogs} onShowToast={addToast} />
-            )}
-
-            {currentSection === 'roles' && <RolePermissionsMatrix />}
           </div>
 
           {/* Operational Footer with LocalStorage Status & Baseline Reset */}
           <footer className="mt-12 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>{t('footer.storage_engine', 'GCS Storage Engine: localStorage Active')}</span>
+              <span>GCS Storage Engine: <strong className="text-slate-400 font-mono">localStorage Active</strong></span>
               <span>·</span>
-              <span>{t('footer.manager', 'Manager')}: <strong className="text-slate-300">Hagenimana Damascene</strong></span>
+              <span>Manager: <strong className="text-slate-300">Hagenimana Damascene</strong></span>
             </div>
 
             <div className="flex items-center gap-4">
@@ -750,7 +1009,7 @@ export default function App() {
                 title="View public GCS Landing Page"
               >
                 <Globe className="w-3.5 h-3.5" />
-                <span>{t('nav.landing', 'Landing Page')}</span>
+                <span>Landing Page</span>
               </button>
               <span>·</span>
               <button
@@ -759,10 +1018,10 @@ export default function App() {
                 title="Reset local storage data to initial African-based staff and cricket operational demo state"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>{t('action.reset_demo', 'Reset Demo Records')}</span>
+                <span>Reset Demo Records</span>
               </button>
               <span>·</span>
-              <span>{t('footer.location', 'GCS Stadium Kigali · Rwanda')}</span>
+              <span>GCS Stadium Kigali · Rwanda</span>
             </div>
           </footer>
         </main>
@@ -777,6 +1036,22 @@ export default function App() {
         onShowToast={addToast}
       />
 
+      {/* System Login & Authentication Gateway Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        currentUser={currentUser}
+        availableUsers={users}
+        onLogin={(selectedUser) => {
+          setCurrentUser(selectedUser);
+          saveToStorage('gcs_current_user_id', selectedUser.id);
+        }}
+        onLogout={() => {
+          setIsLoginModalOpen(true);
+        }}
+        onShowToast={addToast}
+      />
+
       {/* Reset Demo Data In-App Confirmation Modal */}
       {isResetConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
@@ -786,13 +1061,13 @@ export default function App() {
                 <RotateCcw className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">{t('modal.reset_title', 'Reset Stadium Demo Records')}</h3>
-                <p className="text-xs text-slate-400">{t('modal.reset_desc', 'Restore default operations baseline')}</p>
+                <h3 className="text-base font-bold text-white">Reset Stadium Demo Records</h3>
+                <p className="text-xs text-slate-400">Restore default operations baseline</p>
               </div>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              {t('modal.reset_warning', 'This will restore all task workflows, inventory stock balances, match calendar fixtures, and demo logs to their initial clean state.')}
+              This will restore all task workflows, inventory stock balances, match calendar fixtures, and demo logs to their initial clean state.
             </p>
 
             <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
@@ -800,18 +1075,157 @@ export default function App() {
                 onClick={() => setIsResetConfirmOpen(false)}
                 className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
               >
-                {t('action.cancel', 'Cancel')}
+                Cancel
               </button>
               <button
                 onClick={handleConfirmReset}
                 className="px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-500 rounded-xl transition-colors cursor-pointer shadow-xs"
               >
-                {t('action.confirm_reset', 'Restore Operations Baseline')}
+                Reset Records
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Mobile Sticky Bottom Navigation Bar */}
+      <nav 
+        aria-label="Mobile Bottom Navigation"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800/90 px-1 pt-1 pb-safe-offset-2 flex items-center justify-around shadow-2xl touch-manipulation select-none"
+      >
+        {isSectionAuthorizedForRole('workspace', currentUser.role) && (
+          <button
+            onClick={() => setCurrentSection('workspace')}
+            className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer relative active:scale-95 ${
+              currentSection === 'workspace'
+                ? 'text-teal-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentSection === 'workspace' && (
+              <span className="absolute top-0 w-6 h-0.5 rounded-full bg-teal-400 shadow-xs" />
+            )}
+            <LayoutDashboard className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">{t('nav_workspace')}</span>
+          </button>
+        )}
+
+        {isSectionAuthorizedForRole('dashboard', currentUser.role) && (
+          <button
+            onClick={() => setCurrentSection('dashboard')}
+            className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer relative active:scale-95 ${
+              currentSection === 'dashboard'
+                ? 'text-teal-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentSection === 'dashboard' && (
+              <span className="absolute top-0 w-6 h-0.5 rounded-full bg-teal-400 shadow-xs" />
+            )}
+            <BarChart3 className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">{t('nav_dashboard')}</span>
+          </button>
+        )}
+
+        {isSectionAuthorizedForRole('tasks', currentUser.role) && (
+          <button
+            onClick={() => setCurrentSection('tasks')}
+            className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer relative active:scale-95 ${
+              currentSection === 'tasks'
+                ? 'text-teal-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentSection === 'tasks' && (
+              <span className="absolute top-0 w-6 h-0.5 rounded-full bg-teal-400 shadow-xs" />
+            )}
+            <div className="relative">
+              <CheckSquare className="w-5 h-5 mb-0.5" />
+              {pendingTasksCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-rose-500 text-white font-mono text-[9px] font-bold px-1 rounded-full leading-tight">
+                  {pendingTasksCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight">{t('nav_tasks')}</span>
+          </button>
+        )}
+
+        {isSectionAuthorizedForRole('calendar', currentUser.role) && (
+          <button
+            onClick={() => setCurrentSection('calendar')}
+            className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer relative active:scale-95 ${
+              currentSection === 'calendar'
+                ? 'text-teal-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentSection === 'calendar' && (
+              <span className="absolute top-0 w-6 h-0.5 rounded-full bg-teal-400 shadow-xs" />
+            )}
+            <div className="relative">
+              <CalendarIcon className="w-5 h-5 mb-0.5" />
+              {events.length > 0 && (
+                <span className="absolute -top-1 -right-2 bg-teal-500 text-white font-mono text-[9px] font-bold px-1 rounded-full leading-tight">
+                  {events.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight">{t('nav_calendar')}</span>
+          </button>
+        )}
+
+        {isSectionAuthorizedForRole('inventory', currentUser.role) && (
+          <button
+            onClick={() => setCurrentSection('inventory')}
+            className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer relative active:scale-95 ${
+              currentSection === 'inventory'
+                ? 'text-teal-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentSection === 'inventory' && (
+              <span className="absolute top-0 w-6 h-0.5 rounded-full bg-teal-400 shadow-xs" />
+            )}
+            <div className="relative">
+              <Package className="w-5 h-5 mb-0.5" />
+              {lowStockCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-amber-500 text-white font-mono text-[9px] font-bold px-1 rounded-full leading-tight">
+                  {lowStockCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight">{t('nav_inventory')}</span>
+          </button>
+        )}
+
+        {/* If user is restricted from workspace (e.g., Staff or Storekeeper), show Communication hub icon */}
+        {!isSectionAuthorizedForRole('workspace', currentUser.role) && isSectionAuthorizedForRole('communication', currentUser.role) && (
+          <button
+            onClick={() => setCurrentSection('communication')}
+            className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer relative active:scale-95 ${
+              currentSection === 'communication'
+                ? 'text-teal-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentSection === 'communication' && (
+              <span className="absolute top-0 w-6 h-0.5 rounded-full bg-teal-400 shadow-xs" />
+            )}
+            <Megaphone className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">{t('nav_communication')}</span>
+          </button>
+        )}
+
+        <button
+          onClick={() => setIsMobileNavOpen(true)}
+          className="flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 rounded-xl transition-all cursor-pointer text-slate-400 hover:text-slate-200 relative active:scale-95"
+          aria-label="Open full stadium navigation menu"
+        >
+          <Menu className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] tracking-tight">Menu</span>
+        </button>
+      </nav>
 
       {/* Floating Toast Notification Stack */}
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />

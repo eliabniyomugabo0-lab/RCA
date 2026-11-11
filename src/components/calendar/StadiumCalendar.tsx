@@ -5,7 +5,6 @@ import {
   User, 
   Task 
 } from '../../types';
-import { useTranslation } from '../../context/LanguageContext';
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -30,11 +29,13 @@ import {
   Sparkles,
   ExternalLink,
   Share2,
-  ArrowUpDown
+  ArrowUpDown,
+  ShieldCheck
 } from 'lucide-react';
 import { EventDetailModal } from './EventDetailModal';
 import { EventFormModal } from './EventFormModal';
 import { downloadIcsFile, downloadAllEventsIcs } from '../../utils/calendarExport';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface StadiumCalendarProps {
   events: CalendarEvent[];
@@ -61,7 +62,8 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
   onNavigateToTask,
   onShowToast
 }) => {
-  const { t, translateEvents, translateTasks } = useTranslation();
+  const { t } = useLanguage();
+
   // Calendar base date — default to October 2026 (the project's active timeframe) or current
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     // If events have October 2026, default to 2026-10-15
@@ -73,10 +75,6 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [includeTasks, setIncludeTasks] = useState(true);
 
-  // Multi-lingual translations for calendar fixtures and tasks
-  const displayedEvents = useMemo(() => translateEvents(events), [events, translateEvents]);
-  const displayedTasks = useMemo(() => translateTasks(tasks), [tasks, translateTasks]);
-
   // Selected event for detail drawer/modal
   const [activeEvent, setActiveEvent] = useState<CalendarEvent | null>(null);
 
@@ -85,10 +83,13 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
   const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
   const [selectedDateForNewEvent, setSelectedDateForNewEvent] = useState<string>('2026-10-15');
 
+  // RBAC: Operations Manager, Supervisor, and System Admin can schedule/manage events
+  const canManageEvents = currentUser.role === 'CRICKET_OPERATIONS_MANAGER' || currentUser.role === 'SUPERVISOR' || currentUser.role === 'SYSTEM_ADMIN';
+
   // Convert tasks to calendar events if includeTasks is enabled
   const mappedTaskEvents = useMemo<CalendarEvent[]>(() => {
     if (!includeTasks) return [];
-    return displayedTasks.map(t => ({
+    return tasks.map(t => ({
       id: `task-evt-${t.id}`,
       title: `[Task] ${t.title}`,
       type: 'TASK_DEADLINE' as CalendarEventType,
@@ -104,12 +105,12 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
       linkedTaskId: t.id,
       tags: ['Operational Task', t.department, t.priority]
     }));
-  }, [displayedTasks, includeTasks]);
+  }, [tasks, includeTasks]);
 
   // Combine calendar events + mapped tasks
   const combinedEvents = useMemo(() => {
-    return [...displayedEvents, ...mappedTaskEvents];
-  }, [displayedEvents, mappedTaskEvents]);
+    return [...events, ...mappedTaskEvents];
+  }, [events, mappedTaskEvents]);
 
   // Filter events based on active category and search
   const filteredEvents = useMemo(() => {
@@ -387,26 +388,33 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               <span>Gahanga Cricket Stadium Operations Schedule</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              {t('nav.calendar', 'Stadium & Fixture Calendar')}
+              {t('calendar_title')}
             </h1>
             <p className="text-sm text-slate-400 max-w-2xl">
-              Centralized itinerary for international match fixtures, pitch moisture rolling cycles, high-performance training clinics, and operational task deadlines.
+              {t('calendar_subtitle')}
             </p>
           </div>
 
-          {/* Action Header Buttons */}
+          {/* Action Header Buttons (Authorized Roles Only) */}
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => {
-                setEventToEdit(null);
-                setSelectedDateForNewEvent(currentDate.toISOString().split('T')[0]);
-                setIsFormModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t('action.schedule_event', 'Schedule Fixture / Event')}</span>
-            </button>
+            {canManageEvents ? (
+              <button
+                onClick={() => {
+                  setEventToEdit(null);
+                  setSelectedDateForNewEvent(currentDate.toISOString().split('T')[0]);
+                  setIsFormModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t('schedule_event')}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-400 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                <span>Fixtures & Schedules (Read-Only)</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -476,7 +484,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               onClick={handleToday}
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors cursor-pointer"
             >
-              Today (Oct 15)
+              {t('today')}
             </button>
 
             <span className="text-lg sm:text-xl font-bold text-white tracking-tight ml-2">
@@ -485,42 +493,42 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
           </div>
 
           {/* View Mode Switcher (Month / Week / Agenda) */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-3 sm:flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs w-full sm:w-auto">
               <button
                 onClick={() => setViewMode('month')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                   viewMode === 'month'
                     ? 'bg-teal-600 text-white shadow-xs font-semibold'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <CalendarDays className="w-3.5 h-3.5" />
-                <span>Month</span>
+                <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('view_month')}</span>
               </button>
 
               <button
                 onClick={() => setViewMode('week')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                   viewMode === 'week'
                     ? 'bg-teal-600 text-white shadow-xs font-semibold'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <CalendarRange className="w-3.5 h-3.5" />
-                <span>Week</span>
+                <CalendarRange className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('view_week')}</span>
               </button>
 
               <button
                 onClick={() => setViewMode('agenda')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                   viewMode === 'agenda'
                     ? 'bg-teal-600 text-white shadow-xs font-semibold'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <ListFilter className="w-3.5 h-3.5" />
-                <span>Agenda</span>
+                <ListFilter className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('view_agenda')}</span>
               </button>
             </div>
           </div>
@@ -538,7 +546,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
                   : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
               }`}
             >
-              All Events ({combinedEvents.length})
+              {t('all_events')} ({combinedEvents.length})
             </button>
 
             <button
@@ -550,7 +558,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               }`}
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span>Matches ({stats.matches})</span>
+              <span>{t('matches')} ({stats.matches})</span>
             </button>
 
             <button
@@ -562,7 +570,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               }`}
             >
               <Wrench className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Pitch & Turf ({stats.maintenance})</span>
+              <span>{t('pitch_turf')} ({stats.maintenance})</span>
             </button>
 
             <button
@@ -574,7 +582,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               }`}
             >
               <Dumbbell className="w-3.5 h-3.5 text-sky-400" />
-              <span>Training ({stats.trainings})</span>
+              <span>{t('training')} ({stats.trainings})</span>
             </button>
 
             <button
@@ -586,7 +594,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               }`}
             >
               <Building2 className="w-3.5 h-3.5 text-rose-400" />
-              <span>Stadium / VIP</span>
+              <span>{t('stadium_vip')}</span>
             </button>
 
             <button
@@ -598,7 +606,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
               }`}
             >
               <Package className="w-3.5 h-3.5 text-teal-400" />
-              <span>Stores / Audit</span>
+              <span>{t('stores_audit')}</span>
             </button>
           </div>
 
@@ -609,9 +617,9 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
                 type="checkbox"
                 checked={includeTasks}
                 onChange={(e) => setIncludeTasks(e.target.checked)}
-                className="rounded border-slate-700 text-teal-600 focus:ring-teal-500 bg-slate-950"
+                className="rounded border-slate-700 text-teal-600 focus:ring-teal-500 bg-slate-950 cursor-pointer"
               />
-              <span className="text-slate-400">Sync Task Deadlines</span>
+              <span className="text-slate-400">{t('sync_task_deadlines')}</span>
             </label>
 
             <div className="relative w-full sm:w-56">
@@ -620,7 +628,7 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search fixtures, pitches..."
+                placeholder={t('search_fixtures')}
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-teal-500"
               />
             </div>
@@ -630,20 +638,35 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
 
       {/* Main View Area */}
       {viewMode === 'month' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
-          {/* Day of week header */}
-          <div className="grid grid-cols-7 border-b border-slate-800 bg-slate-950/70 text-center text-xs font-semibold text-slate-400 py-3">
-            <span>Sun</span>
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg space-y-0">
+          {/* Mobile Swipe / Quick Switcher Banner */}
+          <div className="sm:hidden px-3.5 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span className="flex items-center gap-1.5 text-teal-400 font-medium">
+              <span>← Swipe calendar for all days →</span>
+            </span>
+            <button
+              onClick={() => setViewMode('agenda')}
+              className="text-teal-400 font-semibold underline cursor-pointer"
+            >
+              Agenda View
+            </button>
           </div>
 
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-800/80 bg-slate-900">
+          <div className="overflow-x-auto">
+            <div className="min-w-[580px] md:min-w-0">
+              {/* Day of week header */}
+              <div className="grid grid-cols-7 border-b border-slate-800 bg-slate-950/70 text-center text-xs font-semibold text-slate-400 py-3">
+                <span>Sun</span>
+                <span>Mon</span>
+                <span>Tue</span>
+                <span>Wed</span>
+                <span>Thu</span>
+                <span>Fri</span>
+                <span>Sat</span>
+              </div>
+
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-800/80 bg-slate-900">
             {calendarDays.map((day, idx) => {
               const dayEvents = eventsByDate[day.dateStr] || [];
 
@@ -671,19 +694,21 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
                       {day.dayNum}
                     </span>
 
-                    {/* Quick Add Event on this date */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedDateForNewEvent(day.dateStr);
-                        setEventToEdit(null);
-                        setIsFormModalOpen(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 hover:opacity-100 p-1 text-slate-500 hover:text-teal-400 rounded-md transition-opacity cursor-pointer"
-                      title={`Schedule event for ${day.dateStr}`}
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Quick Add Event on this date (Authorized Roles Only) */}
+                    {canManageEvents && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDateForNewEvent(day.dateStr);
+                          setEventToEdit(null);
+                          setIsFormModalOpen(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 hover:opacity-100 p-1 text-slate-500 hover:text-teal-400 rounded-md transition-opacity cursor-pointer"
+                        title={`Schedule event for ${day.dateStr}`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Day Events Stack */}
@@ -724,6 +749,51 @@ export const StadiumCalendar: React.FC<StadiumCalendarProps> = ({
                 </div>
               );
             })}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Selected Date Agenda Strip */}
+          <div className="sm:hidden p-3.5 bg-slate-950/95 border-t border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-200">
+                Fixtures on {selectedDateForNewEvent}:
+              </span>
+              <button
+                onClick={() => {
+                  setEventToEdit(null);
+                  setIsFormModalOpen(true);
+                }}
+                className="text-[11px] font-semibold text-teal-400 hover:text-teal-300 flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Event</span>
+              </button>
+            </div>
+            {(eventsByDate[selectedDateForNewEvent] || []).length === 0 ? (
+              <p className="text-[11px] text-slate-500 italic py-1">
+                No fixtures scheduled for this date.
+              </p>
+            ) : (
+              <div className="space-y-1.5 pt-1">
+                {(eventsByDate[selectedDateForNewEvent] || []).map((ev) => {
+                  const Icon = getTypeIcon(ev.type);
+                  return (
+                    <div
+                      key={ev.id}
+                      onClick={() => setActiveEvent(ev)}
+                      className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-2 cursor-pointer ${getTypeBadgeStyle(ev.type)}`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="font-semibold truncate">{ev.title}</span>
+                      </div>
+                      <span className="text-[10px] font-mono shrink-0">{ev.startTime || 'All Day'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

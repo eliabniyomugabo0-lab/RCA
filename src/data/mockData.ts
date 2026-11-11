@@ -10,11 +10,6 @@ import {
   AuditLogEntry
 } from '../types';
 
-import avatarManagerEric from '../assets/images/avatar_manager_eric_1791894261473.jpg';
-import avatarClaireUwase from '../assets/images/avatar_claire_uwase_1791896213148.jpg';
-import avatarJeanpaulMugisha from '../assets/images/avatar_jeanpaul_mugisha_1791896213713.jpg';
-import avatarAlineMukamana from '../assets/images/avatar_aline_mukamana_1791896213479.jpg';
-
 export const DEMO_USERS: User[] = [
   {
     id: 'usr-ops-mgr',
@@ -29,7 +24,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-sup-claire',
     supervisorName: 'Claire Uwase',
     status: 'ACTIVE',
-    avatarUrl: avatarManagerEric,
+    avatarUrl: '/src/assets/images/avatar_manager_eric_1791894261473.jpg',
     bio: 'Oversees match fixtures, team logistics, training pitch preparations, and operational readiness across GCS main oval and academy nets.',
     joinedDate: '2022-03-15',
     joiningCompanyDate: '2022-03-15',
@@ -38,7 +33,61 @@ export const DEMO_USERS: User[] = [
     schoolBackground: 'BSc Sports Management — University of Rwanda · ICC Level 3 Operations Diploma',
     evaluationLevel: 'Tier 1 — Outstanding / ICC Certified',
     experienceLevel: 'Senior',
-    experienceYears: 12
+    experienceYears: 12,
+    attachments: [
+      {
+        id: 'att-damascene-1',
+        name: 'ICC_Level_3_Cricket_Operations_Certification.pdf',
+        size: 1420000,
+        type: 'application/pdf',
+        uploadedAt: '2026-03-10T14:30:00Z',
+        category: 'CERTIFICATE',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'ICC-OPS-2026-9041',
+        issuer: 'International Cricket Council',
+        notes: 'Verified Level 3 High-Performance Cricket Venue Operations, Pitch Assessment & Match Referees Liaison.',
+        verified: true
+      },
+      {
+        id: 'att-damascene-2',
+        name: 'GCS_Executive_Appointment_Charter.pdf',
+        size: 840000,
+        type: 'application/pdf',
+        uploadedAt: '2026-01-15T09:15:00Z',
+        category: 'CONTRACT',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'GCS-EXEC-CHARTER-2026',
+        issuer: 'GCS Board of Trustees',
+        notes: 'Official appointment letter for Cricket Operations Manager confirming facility oversight.',
+        verified: true
+      },
+      {
+        id: 'att-damascene-3',
+        name: 'Rwanda_National_ID_Card.png',
+        size: 420000,
+        type: 'image/png',
+        uploadedAt: '2026-01-20T11:00:00Z',
+        category: 'ID_DOCUMENT',
+        sourceType: 'CAMERA_SCAN',
+        documentNumber: '1198880023451092',
+        issuer: 'NIDA Rwanda',
+        notes: 'Verified national identification card & GCS security badge.',
+        verified: true
+      },
+      {
+        id: 'att-damascene-4',
+        name: 'RCA_Official_Pitch_and_Matchday_Field_Pass.pdf',
+        size: 980000,
+        type: 'application/pdf',
+        uploadedAt: '2026-04-02T10:00:00Z',
+        category: 'ACCREDITATION',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'RCA-GCS-PASS-088',
+        issuer: 'Rwanda Cricket Association',
+        notes: 'All-zone stadium pass covering Main Pitch, Pavilion Umpires Room, and Broadcast Control.',
+        verified: true
+      }
+    ]
   },
   {
     id: 'usr-sup-claire',
@@ -51,7 +100,7 @@ export const DEMO_USERS: User[] = [
     department: 'Administration',
     role: 'SUPERVISOR',
     status: 'ACTIVE',
-    avatarUrl: avatarClaireUwase,
+    avatarUrl: '/src/assets/images/avatar_claire_uwase_1791896213148.jpg',
     bio: 'Senior director responsible for GCS tournament approvals, capital budget allocations, staff oversight, and international federation liaison.',
     joinedDate: '2020-01-10',
     joiningCompanyDate: '2020-01-10',
@@ -60,7 +109,35 @@ export const DEMO_USERS: User[] = [
     schoolBackground: 'MBA Project Leadership — Mount Kenya University Kigali · BBA Sports Administration',
     evaluationLevel: 'Tier 1 — Executive Master Level',
     experienceLevel: 'Executive',
-    experienceYears: 16
+    experienceYears: 16,
+    attachments: [
+      {
+        id: 'att-claire-1',
+        name: 'MINISPORTS_Facility_Operational_Clearance.pdf',
+        size: 1150000,
+        type: 'application/pdf',
+        uploadedAt: '2026-02-12T09:30:00Z',
+        category: 'ACCREDITATION',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'MINISPORTS-FAC-2026-0312',
+        issuer: 'Ministry of Sports — Republic of Rwanda',
+        notes: 'Official state compliance accreditation for hosting international tournament delegations.',
+        verified: true
+      },
+      {
+        id: 'att-claire-2',
+        name: 'ICC_African_Development_Liaison_Mandate.pdf',
+        size: 920000,
+        type: 'application/pdf',
+        uploadedAt: '2026-01-10T14:00:00Z',
+        category: 'CONTRACT',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'ICC-AFR-MANDATE-2026',
+        issuer: 'ICC African Directorate',
+        notes: 'Mandate confirming directorial governance for African continental cricket tournaments.',
+        verified: true
+      }
+    ]
   },
   {
     id: 'usr-store-jp',
@@ -75,7 +152,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-ops-mgr',
     supervisorName: 'Hagenimana Damascene',
     status: 'ACTIVE',
-    avatarUrl: avatarJeanpaulMugisha,
+    avatarUrl: '/src/assets/images/avatar_jeanpaul_mugisha_1791896213713.jpg',
     bio: 'Directs central equipment storage, stock receipts, distribution to national squads, and asset condition maintenance.',
     joinedDate: '2021-06-01',
     joiningCompanyDate: '2021-06-01',
@@ -84,7 +161,22 @@ export const DEMO_USERS: User[] = [
     schoolBackground: 'Advanced Diploma in Logistics & Inventory Systems — IPRC Kigali',
     evaluationLevel: 'Tier 2 — Advanced Store Operations',
     experienceLevel: 'Mid-Level',
-    experienceYears: 7
+    experienceYears: 7,
+    attachments: [
+      {
+        id: 'att-jp-1',
+        name: 'GCS_Equipment_Custodian_Charter.pdf',
+        size: 780000,
+        type: 'application/pdf',
+        uploadedAt: '2026-03-01T08:00:00Z',
+        category: 'CONTRACT',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'GCS-CUSTODIAN-2026',
+        issuer: 'GCS Stores & Logistics',
+        notes: 'Equipment Custodianship letter authorizing stores management and asset distribution.',
+        verified: true
+      }
+    ]
   },
   {
     id: 'usr-staff-aline',
@@ -99,7 +191,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-ops-mgr',
     supervisorName: 'Hagenimana Damascene',
     status: 'ACTIVE',
-    avatarUrl: avatarAlineMukamana,
+    avatarUrl: '/src/assets/images/avatar_aline_mukamana_1791896213479.jpg',
     bio: 'Coordinates pitch curation, outfield mowing, crease marking, sight screens, and weather covers deployment.',
     joinedDate: '2023-02-18',
     joiningCompanyDate: '2023-02-18',
@@ -108,7 +200,22 @@ export const DEMO_USERS: User[] = [
     schoolBackground: 'Diploma in Turf Grass Science & Agronomy — UR College of Agriculture (CAVM)',
     evaluationLevel: 'Tier 2 — Field Specialist Level',
     experienceLevel: 'Mid-Level',
-    experienceYears: 5
+    experienceYears: 5,
+    attachments: [
+      {
+        id: 'att-aline-1',
+        name: 'GCS_Turf_Agronomy_Pitch_Safety_Certificate.pdf',
+        size: 1280000,
+        type: 'application/pdf',
+        uploadedAt: '2026-02-20T11:15:00Z',
+        category: 'CERTIFICATE',
+        sourceType: 'OFFICIAL_TEMPLATE',
+        documentNumber: 'TURF-SAFE-2026-KGL',
+        issuer: 'GCS Ground Care & Agronomy Directorate',
+        notes: 'Clay density, root compaction, and rapid drainage permeability validated for ICC standards.',
+        verified: true
+      }
+    ]
   },
   {
     id: 'usr-admin-david',
@@ -121,7 +228,7 @@ export const DEMO_USERS: User[] = [
     department: 'Administration',
     role: 'SYSTEM_ADMIN',
     status: 'ACTIVE',
-    avatarUrl: avatarManagerEric,
+    avatarUrl: '/src/assets/images/avatar_manager_eric_1791894261473.jpg',
     bio: 'Administers authentication, role permissions, audit policy logs, and platform reliability.',
     joinedDate: '2019-11-04',
     joiningCompanyDate: '2019-11-04',
@@ -145,7 +252,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-ops-mgr',
     supervisorName: 'Hagenimana Damascene',
     status: 'ACTIVE',
-    avatarUrl: avatarManagerEric,
+    avatarUrl: '/src/assets/images/avatar_manager_eric_1791894261473.jpg',
     bio: 'Leads national squad tactical net drills, video telemetry biomechanics analysis, and bowling machine regimens.',
     joinedDate: '2021-01-15',
     joiningCompanyDate: '2021-01-15',
@@ -169,7 +276,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-ops-mgr',
     supervisorName: 'Hagenimana Damascene',
     status: 'ACTIVE',
-    avatarUrl: avatarClaireUwase,
+    avatarUrl: '/src/assets/images/avatar_claire_uwase_1791896213148.jpg',
     bio: 'Drives school grassroots cricket outreach, equipment distribution in secondary schools, and talent scouting across Rwanda provinces.',
     joinedDate: '2022-08-01',
     joiningCompanyDate: '2022-08-01',
@@ -193,7 +300,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-ops-mgr',
     supervisorName: 'Hagenimana Damascene',
     status: 'ACTIVE',
-    avatarUrl: avatarAlineMukamana,
+    avatarUrl: '/src/assets/images/avatar_aline_mukamana_1791896213479.jpg',
     bio: 'Conducts classroom cricket rules workshops, junior physical literacy modules, and sportsmanship seminars for youth trainees.',
     joinedDate: '2023-05-10',
     joiningCompanyDate: '2023-05-10',
@@ -217,7 +324,7 @@ export const DEMO_USERS: User[] = [
     supervisorId: 'usr-sup-claire',
     supervisorName: 'Claire Uwase',
     status: 'ACTIVE',
-    avatarUrl: avatarJeanpaulMugisha,
+    avatarUrl: '/src/assets/images/avatar_jeanpaul_mugisha_1791896213713.jpg',
     bio: 'Coordinates international and domestic umpire rosters, ICC match playing conditions briefings, and disciplinary reports.',
     joinedDate: '2020-04-01',
     joiningCompanyDate: '2020-04-01',
@@ -272,6 +379,20 @@ export const INITIAL_TASKS: Task[] = [
     deadline: '2026-10-14',
     completionRate: 65,
     createdAt: '2026-10-11T08:30:00Z',
+    attachments: [
+      {
+        id: 'att-spec-001',
+        name: 'ICC_Standard_Pitch_Preparation_Specs_2026.pdf',
+        size: 2450000,
+        type: 'application/pdf',
+        uploadedAt: '2026-10-11T08:30:00Z',
+        sourceType: 'LOCAL_UPLOAD',
+        category: 'ACCREDITATION',
+        notes: 'Official ICC technical guidelines for wicket soil bulk density, moisture targets, and roller speed.',
+        documentNumber: 'ICC-WK-2026-04',
+        issuer: 'ICC Pitch & Grounds Committee'
+      }
+    ],
     submissions: [],
     comments: [
       {
@@ -444,11 +565,11 @@ export const INITIAL_TASKS: Task[] = [
 export const INITIAL_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-bat-01',
-    sku: 'GCS-BAT-ENG01',
-    name: 'Grade 1 English Willow Cricket Bat (SH)',
-    category: 'Cricket Bats',
+    sku: 'GCS-BAT-01',
+    name: 'Bats',
+    category: 'Bats',
     type: 'REUSABLE_ASSET',
-    description: 'Professional match-grade short handle bat, pressed English willow, balanced pick-up.',
+    description: 'Match-grade short handle bats, pressed wood with balanced pick-up.',
     unit: 'Pieces',
     totalQuantity: 24,
     availableQuantity: 18,
@@ -464,11 +585,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-bat-02',
-    sku: 'GCS-BAT-KAS02',
-    name: 'Kashmir Willow Training Bats (Size 6 & SH)',
-    category: 'Cricket Bats',
+    sku: 'GCS-BAT-02',
+    name: 'Training Bats',
+    category: 'Bats',
     type: 'REUSABLE_ASSET',
-    description: 'Heavy-duty practice bats for academy training nets and bowling machine drills.',
+    description: 'Durable practice bats for academy training nets and bowling machine drills.',
     unit: 'Pieces',
     totalQuantity: 40,
     availableQuantity: 32,
@@ -484,11 +605,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-ball-01',
-    sku: 'GCS-BAL-KOK-W',
-    name: 'Kookaburra Turf White Match Ball (4-Piece)',
-    category: 'Cricket Balls',
+    sku: 'GCS-BAL-01',
+    name: 'Balls (White)',
+    category: 'Balls',
     type: 'CONSUMABLE',
-    description: 'ICC standard white leather 156g match ball for official day/night T20 and 50-over games.',
+    description: 'Standard white leather match balls for official day and night fixtures.',
     unit: 'Boxes (6pk)',
     totalQuantity: 30,
     availableQuantity: 12,
@@ -504,11 +625,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-ball-02',
-    sku: 'GCS-BAL-KOK-R',
-    name: 'Kookaburra Turf Red Match Ball (4-Piece)',
-    category: 'Cricket Balls',
+    sku: 'GCS-BAL-02',
+    name: 'Balls (Red)',
+    category: 'Balls',
     type: 'CONSUMABLE',
-    description: 'Regulation red leather 156g match ball for multi-day and red-ball league fixtures.',
+    description: 'Standard red leather match balls for multi-day and league fixtures.',
     unit: 'Boxes (6pk)',
     totalQuantity: 22,
     availableQuantity: 19,
@@ -524,11 +645,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-ball-03',
-    sku: 'GCS-BAL-TRN-SY',
-    name: 'Synthetic Dimple Practice Balls (Net Machines)',
-    category: 'Cricket Balls',
+    sku: 'GCS-BAL-03',
+    name: 'Balls (Practice)',
+    category: 'Balls',
     type: 'CONSUMABLE',
-    description: 'High durability polyurethane dimple practice balls for Jugs bowling machines.',
+    description: 'High durability practice balls for net machines and bowling practice.',
     unit: 'Buckets (24pk)',
     totalQuantity: 14,
     availableQuantity: 5,
@@ -544,11 +665,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-stp-01',
-    sku: 'GCS-STP-ZNG01',
-    name: 'Electronic Flashing LED Stumps & Bails (Set)',
-    category: 'Stumps & Bails',
+    sku: 'GCS-STP-01',
+    name: 'Stumps (LED)',
+    category: 'Stumps',
     type: 'REUSABLE_ASSET',
-    description: 'Broadcast match set with internal battery impact sensors and wireless receiver unit.',
+    description: 'Electronic LED stumps and bails set with wireless impact sensors.',
     unit: 'Sets (2x3+4)',
     totalQuantity: 6,
     availableQuantity: 4,
@@ -564,11 +685,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-stp-02',
-    sku: 'GCS-STP-SPR02',
-    name: 'Heavy Cast-Iron Spring-Return Stumps',
-    category: 'Stumps & Bails',
+    sku: 'GCS-STP-02',
+    name: 'Stumps (Spring)',
+    category: 'Stumps',
     type: 'REUSABLE_ASSET',
-    description: 'Outdoor practice wicket sets mounted on heavy steel bases for practice wickets.',
+    description: 'Outdoor practice wicket sets mounted on heavy steel spring bases.',
     unit: 'Sets',
     totalQuantity: 12,
     availableQuantity: 10,
@@ -584,11 +705,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-uni-01',
-    sku: 'GCS-UNI-RWA-M',
-    name: 'Rwanda National Team Official Match Jersey (Yellow/Blue)',
-    category: 'Uniforms & Apparel',
+    sku: 'GCS-UNI-01',
+    name: 'Jerseys',
+    category: 'Uniforms',
     type: 'REUSABLE_ASSET',
-    description: 'Official sublimation match shirts with RCA crest, player numbers, and sponsor branding.',
+    description: 'Official match jerseys with team crest, player numbers, and branding.',
     unit: 'Jerseys',
     totalQuantity: 45,
     availableQuantity: 28,
@@ -604,11 +725,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-pad-01',
-    sku: 'GCS-PAD-PRO-L',
-    name: 'Pro Batting Leg Guards (Adult Large & RH/LH)',
-    category: 'Protective Equipment',
+    sku: 'GCS-PAD-01',
+    name: 'Pads',
+    category: 'Pads',
     type: 'REUSABLE_ASSET',
-    description: 'High-density foam pre-curved cane ribs with gel knee cups.',
+    description: 'Batting leg guards and protection pads with gel knee cups.',
     unit: 'Pairs',
     totalQuantity: 20,
     availableQuantity: 14,
@@ -624,11 +745,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-hlm-01',
-    sku: 'GCS-HLM-TIT-M',
-    name: 'Titanium Grille Cricket Safety Helmets (BSI Certified)',
-    category: 'Protective Equipment',
+    sku: 'GCS-HLM-01',
+    name: 'Helmets',
+    category: 'Helmets',
     type: 'REUSABLE_ASSET',
-    description: 'Meets latest BS7928:2013 safety testing standard for 156g cricket projectile impact.',
+    description: 'Cricket safety helmets meeting BS7928:2013 projectile impact standards.',
     unit: 'Helmets',
     totalQuantity: 18,
     availableQuantity: 14,
@@ -644,11 +765,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-gnd-01',
-    sku: 'GCS-GND-ROP-68',
-    name: 'High-Visibility Polypropylene Boundary Rope (400m Reel)',
-    category: 'Ground & Field Maintenance',
+    sku: 'GCS-GND-01',
+    name: 'Boundary Ropes',
+    category: 'Ground Equipment',
     type: 'REUSABLE_ASSET',
-    description: '32mm braided white boundary rope with UV weather resistant core.',
+    description: 'Braided white boundary rope reel with UV weather-resistant core.',
     unit: 'Reels',
     totalQuantity: 4,
     availableQuantity: 2,
@@ -664,11 +785,11 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   },
   {
     id: 'inv-gnd-02',
-    sku: 'GCS-GND-CVR-3P',
-    name: 'Full Pitch Triple-Covers (PVC Waterproof 25m x 4m)',
-    category: 'Ground & Field Maintenance',
+    sku: 'GCS-GND-02',
+    name: 'Pitch Covers',
+    category: 'Ground Equipment',
     type: 'REUSABLE_ASSET',
-    description: 'Heavy duty rain covers with integrated wheeling handles and ground eyelets.',
+    description: 'Waterproof full-pitch rain covers with integrated wheeling handles.',
     unit: 'Sheets',
     totalQuantity: 6,
     availableQuantity: 6,
@@ -688,24 +809,24 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
   {
     id: 'mov-101',
     itemId: 'inv-ball-01',
-    itemName: 'Kookaburra Turf White Match Ball (4-Piece)',
-    itemSku: 'GCS-BAL-KOK-W',
+    itemName: 'Balls (White)',
+    itemSku: 'GCS-BAL-01',
     type: 'RECEIPT',
     quantity: 15,
-    sourceLocation: 'Supplier: Kookaburra Sports East Africa (Nairobi)',
+    sourceLocation: 'Supplier: Sports East Africa (Nairobi)',
     destinationLocation: 'Central Vault Shelf B-02',
     recipientOrIssuer: 'Jean-Paul Mugisha (Storekeeper)',
     performedById: 'usr-store-jp',
     performedByName: 'Jean-Paul Mugisha',
-    reason: 'Purchase Order #PO-2026-088 for ICC Tournament match stock',
+    reason: 'Purchase Order #PO-2026-088 for tournament match stock',
     referenceNumber: 'RCV-2026-1012',
     timestamp: '2026-10-12T09:15:00Z'
   },
   {
     id: 'mov-102',
     itemId: 'inv-bat-01',
-    itemName: 'Grade 1 English Willow Cricket Bat (SH)',
-    itemSku: 'GCS-BAT-ENG01',
+    itemName: 'Bats',
+    itemSku: 'GCS-BAT-01',
     type: 'ISSUE',
     quantity: 4,
     sourceLocation: 'Main Pavilion Store Bay A-01',
@@ -720,8 +841,8 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
   {
     id: 'mov-103',
     itemId: 'inv-bat-02',
-    itemName: 'Kashmir Willow Training Bats (Size 6 & SH)',
-    itemSku: 'GCS-BAT-KAS02',
+    itemName: 'Training Bats',
+    itemSku: 'GCS-BAT-02',
     type: 'RETURN',
     quantity: 6,
     sourceLocation: 'GCS Youth Academy Nets',
@@ -736,8 +857,8 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
   {
     id: 'mov-104',
     itemId: 'inv-bat-01',
-    itemName: 'Grade 1 English Willow Cricket Bat (SH)',
-    itemSku: 'GCS-BAT-ENG01',
+    itemName: 'Bats',
+    itemSku: 'GCS-BAT-01',
     type: 'DAMAGE_LOSS',
     quantity: 2,
     sourceLocation: 'Main Pavilion Store Bay A-01',
@@ -745,15 +866,15 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
     recipientOrIssuer: 'Hagenimana Damascene',
     performedById: 'usr-ops-mgr',
     performedByName: 'Hagenimana Damascene',
-    reason: 'Deep longitudinal split along back spine during high-velocity net drill',
+    reason: 'Handle split during high-velocity net drill',
     referenceNumber: 'DMG-2026-0412',
     timestamp: '2026-10-10T16:20:00Z'
   },
   {
     id: 'mov-105',
     itemId: 'inv-ball-03',
-    itemName: 'Synthetic Dimple Practice Balls (Net Machines)',
-    itemSku: 'GCS-BAL-TRN-SY',
+    itemName: 'Balls (Practice)',
+    itemSku: 'GCS-BAL-03',
     type: 'ISSUE',
     quantity: 4,
     sourceLocation: 'Academy Nets Store Bay C-01',
@@ -761,7 +882,7 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
     recipientOrIssuer: 'High Performance Coach',
     performedById: 'usr-store-jp',
     performedByName: 'Jean-Paul Mugisha',
-    reason: 'Daily bowling machine allocation for national fast bowling camp',
+    reason: 'Daily bowling machine allocation for fast bowling camp',
     referenceNumber: 'ISS-2026-0955',
     timestamp: '2026-10-13T06:45:00Z'
   }
@@ -776,8 +897,8 @@ export const INITIAL_REQUESTS: StockRequest[] = [
     department: 'Cricket Operations',
     targetEventOrTeam: 'Rwanda Women U-19 Training Camp',
     items: [
-      { itemId: 'inv-ball-01', itemName: 'Kookaburra Turf White Match Ball (4-Piece)', requestedQty: 4, unit: 'Boxes (6pk)' },
-      { itemId: 'inv-pad-01', itemName: 'Pro Batting Leg Guards (Adult Large & RH/LH)', requestedQty: 6, unit: 'Pairs' }
+      { itemId: 'inv-ball-01', itemName: 'Balls (White)', requestedQty: 4, unit: 'Boxes (6pk)' },
+      { itemId: 'inv-pad-01', itemName: 'Pads', requestedQty: 6, unit: 'Pairs' }
     ],
     purpose: 'Preparation for upcoming East Africa T20 Challenge matches this weekend.',
     neededByDate: '2026-10-15',
@@ -792,7 +913,7 @@ export const INITIAL_REQUESTS: StockRequest[] = [
     department: 'Ground & Pitch Maintenance',
     targetEventOrTeam: 'Main Oval Maintenance',
     items: [
-      { itemId: 'inv-gnd-01', itemName: 'High-Visibility Polypropylene Boundary Rope', requestedQty: 1, unit: 'Reels' }
+      { itemId: 'inv-gnd-01', itemName: 'Boundary Ropes', requestedQty: 1, unit: 'Reels' }
     ],
     purpose: 'Replacement section for North Pavilion boundary curvature line.',
     neededByDate: '2026-10-14',

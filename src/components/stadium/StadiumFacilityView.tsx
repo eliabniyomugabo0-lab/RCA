@@ -12,6 +12,8 @@ import {
   Shield
 } from 'lucide-react';
 
+import { StadiumImageSlider } from '../common/StadiumImageSlider';
+
 export const StadiumFacilityView: React.FC = () => {
   const pitches = [
     { id: 1, name: 'Pitch #1 (Eastern)', status: 'Rest & Soil Recovery', moisture: '18.2%', grassHeight: '6.5mm', compaction: 'Low (Resting)' },
@@ -36,40 +38,30 @@ export const StadiumFacilityView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stadium Architectural Hero Anchor */}
-      <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-xl">
-        <div className="relative h-64 sm:h-80 w-full overflow-hidden">
-          <img
-            src="/src/assets/images/gcs_stadium_exterior_1791894260939.jpg"
-            alt="Gahanga Cricket Stadium Kigali"
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-          
-          <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-teal-400">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>Gahanga Sector, Kicukiro District, Kigali, Rwanda</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1">
-                Gahanga Cricket Stadium (GCS)
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
-                Home of Rwandan Cricket. Iconic curved earth-vault pavilion with 5 center turf strips, 4 practice nets, and media broadcasting facilities.
-              </p>
+      {/* Stadium Architectural & Operational Image Slider */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-teal-400">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Gahanga Sector, Kicukiro District, Kigali, Rwanda</span>
             </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-0.5">
+              Gahanga Cricket Stadium Visual Tour & Facilities
+            </h1>
+          </div>
 
-            <div className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 shrink-0">
-              <Sun className="w-4 h-4 text-amber-400" />
-              <div className="text-xs">
-                <span className="font-semibold text-white">24°C Sunny</span>
-                <span className="text-slate-400 block text-[10px]">Humidity: 58% · Wind: 8 km/h</span>
-              </div>
+          <div className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/80 self-start sm:self-auto">
+            <Sun className="w-4 h-4 text-amber-400" />
+            <div className="text-xs">
+              <span className="font-semibold text-white">24°C Sunny</span>
+              <span className="text-slate-400 block text-[10px]">Humidity: 58% · Wind: 8 km/h</span>
             </div>
           </div>
         </div>
+
+        {/* The Interactive Image Slider */}
+        <StadiumImageSlider aspectRatio="cinema" showThumbnails={true} showCaptions={true} />
       </div>
 
       {/* Main Oval Pitch Strip Readiness */}

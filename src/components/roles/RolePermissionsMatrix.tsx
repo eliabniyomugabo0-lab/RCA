@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ShieldCheck, Check, X, KeyRound, AlertTriangle } from 'lucide-react';
 import { Role } from '../../types';
 
@@ -47,6 +47,19 @@ export const RolePermissionsMatrix: React.FC = () => {
     { name: 'Manage System Users & Roles', supervisor: false, manager: false, store: false, staff: false, admin: true }
   ];
 
+  const [selectedRoleTab, setSelectedRoleTab] = useState<Role>('SUPERVISOR');
+
+  const getPermissionForRole = (p: typeof permissions[0], role: Role): boolean => {
+    switch (role) {
+      case 'SUPERVISOR': return p.supervisor;
+      case 'CRICKET_OPERATIONS_MANAGER': return p.manager;
+      case 'STOREKEEPER': return p.store;
+      case 'STAFF': return p.staff;
+      case 'SYSTEM_ADMIN': return p.admin;
+      default: return false;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -72,8 +85,69 @@ export const RolePermissionsMatrix: React.FC = () => {
         </div>
       </div>
 
-      {/* Matrix Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
+      {/* Mobile-First Role Selector & Capability List */}
+      <div className="block md:hidden space-y-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          {roles.map((r) => (
+            <button
+              key={r.role}
+              type="button"
+              onClick={() => setSelectedRoleTab(r.role)}
+              className={`px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer whitespace-nowrap min-h-[40px] ${
+                selectedRoleTab === r.role
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+              }`}
+            >
+              {r.label.split('/')[0].trim()}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 shadow-xs">
+          <div className="border-b border-slate-800 pb-2.5">
+            <h3 className="text-sm font-bold text-white">
+              {roles.find(r => r.role === selectedRoleTab)?.label}
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+              {roles.find(r => r.role === selectedRoleTab)?.desc}
+            </p>
+          </div>
+
+          <div className="divide-y divide-slate-800/80">
+            {permissions.map((p, idx) => {
+              const hasAccess = getPermissionForRole(p, selectedRoleTab);
+              return (
+                <div key={idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                  <span className={hasAccess ? 'text-slate-200 font-medium' : 'text-slate-500'}>
+                    {p.name}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 flex items-center gap-1 ${
+                    hasAccess
+                      ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
+                      : 'bg-slate-800/60 text-slate-500 border border-slate-800'
+                  }`}>
+                    {hasAccess ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Authorized</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-3 h-3 text-slate-600" />
+                        <span>Restricted</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Matrix Table */}
+      <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-950/80 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">

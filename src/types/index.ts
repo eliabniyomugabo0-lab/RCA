@@ -7,6 +7,8 @@ export type Role =
 
 export type ThemeMode = 'navy' | 'turf' | 'obsidian' | 'dusk' | 'light';
 
+export type Language = 'en' | 'rw' | 'fr' | 'sw';
+
 export type TaskStatus = 
   | 'DRAFT'
   | 'ASSIGNED'
@@ -60,6 +62,42 @@ export interface User {
   evaluationLevel: string;
   experienceLevel: 'Junior' | 'Mid-Level' | 'Senior' | 'Executive';
   experienceYears: number;
+  attachments?: ProfileAttachment[];
+}
+
+export type ProfileAttachmentCategory = 
+  | 'CERTIFICATE' 
+  | 'ID_DOCUMENT' 
+  | 'CONTRACT' 
+  | 'MEDICAL' 
+  | 'ACCREDITATION'
+  | 'MEMO_REPORT'
+  | 'OTHER';
+
+export type ProfileAttachmentSource =
+  | 'LOCAL_UPLOAD'
+  | 'CAMERA_SCAN'
+  | 'CLOUD_LINK'
+  | 'OFFICIAL_TEMPLATE'
+  | 'DIGITAL_MEMO';
+
+export interface ProfileAttachment {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  dataUrl?: string;
+  externalUrl?: string;
+  sourceType?: ProfileAttachmentSource;
+  category?: ProfileAttachmentCategory;
+  notes?: string;
+  documentNumber?: string;
+  issuer?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  verified?: boolean;
+  content?: string;
 }
 
 export interface TaskSubmission {
@@ -72,6 +110,7 @@ export interface TaskSubmission {
   reportSummary: string;
   deliverablesNotes: string;
   attachmentName?: string;
+  attachments?: ProfileAttachment[];
   reviewComment?: string;
   reviewedBy?: string;
   reviewedAt?: string;
@@ -85,6 +124,7 @@ export interface TaskComment {
   authorName: string;
   authorRole: Role;
   text: string;
+  attachments?: ProfileAttachment[];
   createdAt: string;
 }
 
@@ -105,6 +145,7 @@ export interface Task {
   deadline: string;
   isOverdue?: boolean;
   completionRate?: number;
+  attachments?: ProfileAttachment[];
   submissions: TaskSubmission[];
   comments: TaskComment[];
   createdAt: string;
@@ -145,6 +186,7 @@ export interface StockMovement {
   performedByName: string;
   reason: string;
   referenceNumber: string;
+  attachments?: ProfileAttachment[];
   timestamp: string;
 }
 
@@ -164,6 +206,7 @@ export interface StockRequest {
   purpose: string;
   neededByDate: string;
   status: 'PENDING' | 'APPROVED' | 'ISSUED' | 'REJECTED';
+  attachments?: ProfileAttachment[];
   reviewerComment?: string;
   reviewedBy?: string;
   reviewedAt?: string;
@@ -179,6 +222,7 @@ export interface Announcement {
   targetAudience: 'ALL_STAFF' | 'MANAGEMENT' | 'GROUND_STAFF' | 'STORE_TEAM';
   priority: 'ROUTINE' | 'IMPORTANT' | 'CRITICAL';
   isPinned: boolean;
+  attachments?: ProfileAttachment[];
   publishedAt: string;
   readCount: number;
   totalRecipients: number;
@@ -192,6 +236,7 @@ export interface DirectMessage {
   recipientId: string;
   recipientName: string;
   content: string;
+  attachments?: ProfileAttachment[];
   timestamp: string;
   isRead: boolean;
 }
@@ -244,5 +289,6 @@ export interface CalendarEvent {
   linkedTaskId?: string;
   teamsOrParticipants?: string;
   tags?: string[];
+  attachments?: ProfileAttachment[];
 }
 

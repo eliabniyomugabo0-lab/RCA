@@ -254,12 +254,12 @@ export const TaskOverviewChart: React.FC<TaskOverviewChartProps> = ({
             </div>
           )}
 
-          {/* View Mode Selector */}
-          <div className="flex items-center gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg">
+          {/* View Mode Selector - Horizontally scrollable on mobile */}
+          <div className="flex items-center gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg overflow-x-auto max-w-full scrollbar-none shrink-0">
             <button
               onClick={() => setViewMode('status-priority')}
               title="Distribution by Status with Priority Stacking"
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                 viewMode === 'status-priority'
                   ? 'bg-slate-800 text-teal-300 shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
@@ -270,7 +270,7 @@ export const TaskOverviewChart: React.FC<TaskOverviewChartProps> = ({
             <button
               onClick={() => setViewMode('priority-status')}
               title="Distribution by Priority with Status Stacking"
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                 viewMode === 'priority-status'
                   ? 'bg-slate-800 text-teal-300 shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
@@ -281,7 +281,7 @@ export const TaskOverviewChart: React.FC<TaskOverviewChartProps> = ({
             <button
               onClick={() => setViewMode('donuts')}
               title="Dual Donut Distribution Share"
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${
                 viewMode === 'donuts'
                   ? 'bg-slate-800 text-teal-300 shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
@@ -293,7 +293,7 @@ export const TaskOverviewChart: React.FC<TaskOverviewChartProps> = ({
             <button
               onClick={() => setViewMode('completion')}
               title="Average Completion Velocity & Volume"
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${
                 viewMode === 'completion'
                   ? 'bg-slate-800 text-teal-300 shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'

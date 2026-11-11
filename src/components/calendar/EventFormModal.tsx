@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   CalendarEvent, 
   CalendarEventType, 
-  User 
+  User,
+  ProfileAttachment
 } from '../../types';
 import { 
   X, 
@@ -18,6 +19,32 @@ import {
   Users, 
   Check 
 } from 'lucide-react';
+import { OptionalAttachmentField, QuickTemplateOption } from '../common/OptionalAttachmentField';
+import { FilePreviewModal } from '../common/FilePreviewModal';
+
+const EVENT_QUICK_TEMPLATES: QuickTemplateOption[] = [
+  {
+    label: 'ICC Match Day Playing Conditions & Protocols',
+    name: 'ICC_Match_Day_Operating_Procedures_2026.pdf',
+    content: 'INTERNATIONAL CRICKET COUNCIL (ICC) PLAYING CONDITIONS\n\n1. Pitch handover: 90 minutes prior to scheduled coin toss.\n2. Ball check: 2 official match-grade leather balls with fourth umpire.\n3. Sight screens: High-contrast white/black canvas covers aligned.\n4. Floodlight minimum lux: 1500 lux across square; 1000 lux outfield.',
+    size: 280000,
+    category: 'ACCREDITATION'
+  },
+  {
+    label: 'Curator Pitch Moisture & Rolling Schedule',
+    name: 'GCS_Center_Pitch_Moisture_Rolling_Schedule.csv',
+    content: 'Phase,Target Time,Roller Weight,Moisture Target %,Staff Lead\nPre-Match Morning,06:30 AM,1.5 Ton,14.5%,Head Curator\nMidday Sun Exposure,11:00 AM,0.5 Ton,13.8%,Pitch Groundskeeper\nPre-Toss Inspection,01:30 PM,Hand Brush,13.2%,Curator Lead',
+    size: 98000,
+    category: 'MEMO_REPORT'
+  },
+  {
+    label: 'Broadcast & Media Gallery Access Register',
+    name: 'GCS_Media_Broadcast_Accreditation_Brief.pdf',
+    content: 'BROADCAST CAMERA POSITIONS & POWER LOAD ASSIGNMENT\n\nCamera 1: High North Pavilion Scaffold\nCamera 2: Reverse South Embankment\nPower feed: 3-Phase generator supply with isolated audio UPS.',
+    size: 195000,
+    category: 'ACCREDITATION'
+  }
+];
 
 interface EventFormModalProps {
   isOpen: boolean;
@@ -51,6 +78,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   const [assigneeId, setAssigneeId] = useState('');
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [attachments, setAttachments] = useState<ProfileAttachment[]>([]);
+  const [previewAttachment, setPreviewAttachment] = useState<ProfileAttachment | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   const venuePresets = [
@@ -88,6 +117,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       setAssigneeId(initialEvent.assigneeId || currentUser.id);
       setDescription(initialEvent.description || '');
       setTagsInput(initialEvent.tags ? initialEvent.tags.join(', ') : '');
+      setAttachments(initialEvent.attachments || []);
     } else {
       setTitle('');
       setType('MATCH');
@@ -102,6 +132,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       setAssigneeId(currentUser.id);
       setDescription('');
       setTagsInput('');
+      setAttachments([]);
     }
     setErrorMsg('');
   }, [initialEvent, initialDate, isOpen, currentUser.id]);
@@ -141,7 +172,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       organizerOrAssignee: selectedUser.name,
       description: description.trim() || undefined,
       status: initialEvent?.status || 'SCHEDULED',
-      tags: parsedTags.length > 0 ? parsedTags : undefined
+      tags: parsedTags.length > 0 ? parsedTags : undefined,
+      attachments: attachments.length > 0 ? attachments : undefined
     });
 
     onClose();
@@ -387,6 +419,16 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
             />
           </div>
 
+          {/* Optional Attachments Field (Encouraged) */}
+          <OptionalAttachmentField
+            attachments={attachments}
+            onChange={setAttachments}
+            title="Event Brief & Operational Reference Files"
+            encouragementText="Encouraged: Attach match schedules, team squad sheets, ICC sanctions, pitch layouts, or broadcast protocols. Schedule can be saved without attachments."
+            quickTemplates={EVENT_QUICK_TEMPLATES}
+            onPreviewAttachment={(att) => setPreviewAttachment(att)}
+          />
+
           {/* Form Actions */}
           <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
             <button
@@ -406,6 +448,22 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        isOpen={!!previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        attachment={previewAttachment}
+        allAttachments={attachments}
+        onSelectAttachment={(att) => setPreviewAttachment(att)}
+        userContext={{
+          name: currentUser.name,
+          positionName: currentUser.positionName || currentUser.jobTitle,
+          department: currentUser.department,
+          evaluationLevel: currentUser.evaluationLevel,
+          email: currentUser.email
+        }}
+      />
     </div>
   );
 };

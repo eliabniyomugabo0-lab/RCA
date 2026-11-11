@@ -155,13 +155,16 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const t = useCallback((key: string, defaultText?: string): string => {
-    const currentDict = TRANSLATIONS[language] || TRANSLATIONS.en;
+    // Dictionaries are keyed by known translation keys, but callers may pass any
+    // string, so index through a permissive view of the record.
+    const currentDict = (TRANSLATIONS[language] || TRANSLATIONS.en) as unknown as Record<string, string> | undefined;
     if (currentDict && currentDict[key]) {
       return currentDict[key];
     }
     // Fallback to English dictionary
-    if (TRANSLATIONS.en && TRANSLATIONS.en[key]) {
-      return TRANSLATIONS.en[key];
+    const fallbackDict = TRANSLATIONS.en as unknown as Record<string, string> | undefined;
+    if (fallbackDict && fallbackDict[key]) {
+      return fallbackDict[key];
     }
     // Default text fallback or key itself
     return defaultText !== undefined ? defaultText : key;

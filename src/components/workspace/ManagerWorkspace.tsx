@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { User, Task, InventoryItem, Announcement, StockRequest, CalendarEvent } from '../../types';
 import { TaskOverviewChart } from '../tasks/TaskOverviewChart';
-import { useTranslation } from '../../context/LanguageContext';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ManagerWorkspaceProps {
   currentUser: User;
@@ -51,39 +51,32 @@ export const ManagerWorkspace: React.FC<ManagerWorkspaceProps> = ({
   onOpenNewRequestModal,
   onOpenProfile
 }) => {
-  const { t, translateTasks, translateInventory, translateAnnouncements, translateEvents } = useTranslation();
-
-  // Multi-lingual translations for dashboard widgets
-  const displayedTasks = translateTasks(tasks);
-  const displayedInventory = translateInventory(inventory);
-  const displayedAnnouncements = translateAnnouncements(announcements);
-  const displayedEvents = translateEvents(events);
-
+  const { t } = useLanguage();
   // Filter tasks based on role
   const isSupervisor = currentUser.role === 'SUPERVISOR';
   const isStorekeeper = currentUser.role === 'STOREKEEPER';
 
-  const relevantTasks = displayedTasks.filter(t => {
+  const relevantTasks = tasks.filter(t => {
     if (isSupervisor) return true;
     return t.assigneeId === currentUser.id || t.createdById === currentUser.id;
   });
 
   const activeTasks = relevantTasks.filter(t => t.status !== 'APPROVED');
   const urgentTasks = relevantTasks.filter(t => (t.priority === 'URGENT' || t.priority === 'HIGH') && t.status !== 'APPROVED');
-  const pendingReportsToReview = displayedTasks.filter(t => t.status === 'SUBMITTED');
+  const pendingReportsToReview = tasks.filter(t => t.status === 'SUBMITTED');
   const inProgressTasks = relevantTasks.filter(t => t.status === 'IN_PROGRESS');
   const assignedTasks = relevantTasks.filter(t => t.status === 'ASSIGNED');
 
-  const lowStockItems = displayedInventory.filter(i => i.availableQuantity <= i.reorderThreshold);
-  const outOfStockItems = displayedInventory.filter(i => i.availableQuantity === 0);
+  const lowStockItems = inventory.filter(i => i.availableQuantity <= i.reorderThreshold);
+  const outOfStockItems = inventory.filter(i => i.availableQuantity === 0);
   const pendingStockRequests = requests.filter(r => r.status === 'PENDING');
   const topDepletedItem = lowStockItems.find(i => i.availableQuantity === 0) || lowStockItems[0];
 
-  const sortedAnnouncements = [...displayedAnnouncements].sort(
+  const sortedAnnouncements = [...announcements].sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
   const latestAnnouncement = sortedAnnouncements[0];
-  const criticalAnnouncementsCount = displayedAnnouncements.filter(
+  const criticalAnnouncementsCount = announcements.filter(
     a => a.priority === 'CRITICAL' || a.priority === 'IMPORTANT'
   ).length;
 
@@ -91,7 +84,7 @@ export const ManagerWorkspace: React.FC<ManagerWorkspaceProps> = ({
     ? Math.round(relevantTasks.reduce((acc, t) => acc + (t.completionRate ?? (t.status === 'APPROVED' ? 100 : t.status === 'SUBMITTED' ? 85 : 0)), 0) / relevantTasks.length)
     : 0;
 
-  const upcomingFixtures = [...displayedEvents]
+  const upcomingFixtures = [...events]
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 3);
 
@@ -102,12 +95,12 @@ export const ManagerWorkspace: React.FC<ManagerWorkspaceProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-teal-400 font-medium">
-              <span>{t('app.stadium_name', 'Gahanga Cricket Stadium')}</span>
+              <span>Gahanga Cricket Stadium</span>
               <span aria-hidden="true">·</span>
-              <span>{t('workspace.hq', 'Operations Headquarters')}</span>
+              <span>Operations Headquarters</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              {t('workspace.welcome', 'Welcome back')}, {currentUser.name}
+              {t('welcome_back')}, {currentUser.name}
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
               {currentUser.role === 'CRICKET_OPERATIONS_MANAGER' && (
@@ -128,44 +121,44 @@ export const ManagerWorkspace: React.FC<ManagerWorkspaceProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 mt-4 sm:mt-0 w-full sm:w-auto">
             {isSupervisor ? (
               <button
                 onClick={onOpenNewTaskModal}
-                className="px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 rounded-lg transition-colors whitespace-nowrap shadow-xs"
+                className="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 rounded-lg transition-colors whitespace-nowrap shadow-xs cursor-pointer flex items-center justify-center min-h-[38px]"
               >
-                {t('action.assign_task', '+ Assign New Task')}
+                + Assign New Task
               </button>
             ) : (
               <button
                 onClick={onOpenNewRequestModal}
-                className="px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 rounded-lg transition-colors whitespace-nowrap shadow-xs"
+                className="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 rounded-lg transition-colors whitespace-nowrap shadow-xs cursor-pointer flex items-center justify-center min-h-[38px]"
               >
-                {t('action.requisition_equipment', '+ Requisition Equipment')}
+                + Requisition
               </button>
             )}
             <button
               onClick={() => onNavigateSection('calendar')}
-              className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]"
               title="Open Stadium & Fixture Calendar"
             >
-              <Calendar className="w-3.5 h-3.5 text-teal-400" />
-              <span>{t('nav.calendar', 'Stadium Calendar')}</span>
+              <Calendar className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+              <span>{t('nav_calendar')}</span>
             </button>
             <button
               onClick={() => onNavigateSection('tasks')}
-              className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+              className="w-full sm:w-auto px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap cursor-pointer flex items-center justify-center min-h-[38px]"
             >
-              {t('action.view_workflows', 'View Workflows')}
+              {t('view_workflows')}
             </button>
             {onOpenProfile && (
               <button
                 onClick={onOpenProfile}
-                className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer"
+                className="w-full sm:w-auto px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]"
                 title="Edit your official personal records and profile photo"
               >
-                <Camera className="w-3.5 h-3.5 text-teal-400" />
-                <span>Edit Profile & Photo</span>
+                <Camera className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                <span>{t('edit_profile_photo')}</span>
               </button>
             )}
           </div>
@@ -224,7 +217,7 @@ export const ManagerWorkspace: React.FC<ManagerWorkspaceProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
             </span>
             <h2 id="operational-pulse-heading" className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Operations Snapshot
+              {t('operations_snapshot')}
             </h2>
             <span className="text-slate-500 text-xs hidden sm:inline">·</span>
             <span className="text-xs text-slate-400 hidden sm:inline">

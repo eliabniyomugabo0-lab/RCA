@@ -11,13 +11,15 @@ import {
   Clock,
   Palette,
   Home,
-  Globe
+  Globe,
+  LogIn,
+  KeyRound
 } from 'lucide-react';
 import { User, Role, InAppNotification, ThemeMode, Task, InventoryItem, CalendarEvent } from '../../types';
 import { NavSection } from './Sidebar';
 import { GlobalSearchBar } from './GlobalSearchBar';
-import { LanguageSelector } from '../common/LanguageSelector';
-import { useTranslation } from '../../context/LanguageContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface NavbarProps {
   currentUser: User;
@@ -40,6 +42,7 @@ interface NavbarProps {
   onSelectInventoryItem?: (item: InventoryItem) => void;
   onSelectStaffUser?: (user: User) => void;
   onSelectCalendarEvent?: (event: CalendarEvent) => void;
+  onOpenLoginModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -62,31 +65,31 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTask,
   onSelectInventoryItem,
   onSelectStaffUser,
-  onSelectCalendarEvent
+  onSelectCalendarEvent,
+  onOpenLoginModal
 }) => {
-  const { t } = useTranslation();
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const { t } = useLanguage();
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const roleLabels: Record<Role, string> = {
-    CRICKET_OPERATIONS_MANAGER: t('role.CRICKET_OPERATIONS_MANAGER', 'Cricket Operations Manager'),
-    SUPERVISOR: t('role.SUPERVISOR', 'Director / Supervisor'),
-    STOREKEEPER: t('role.STOREKEEPER', 'Head Storekeeper'),
-    STAFF: t('role.STAFF', 'Ground Operations Staff'),
-    SYSTEM_ADMIN: t('role.SYSTEM_ADMIN', 'System Administrator')
+    CRICKET_OPERATIONS_MANAGER: t('role_manager'),
+    SUPERVISOR: t('role_supervisor'),
+    STOREKEEPER: t('role_storekeeper'),
+    STAFF: t('role_staff'),
+    SYSTEM_ADMIN: t('role_admin')
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100">
-      <div className="flex items-center justify-between gap-4 px-4 lg:px-6 h-16">
+    <header className="sticky top-0 z-40 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100 pt-safe px-safe">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-4 lg:px-6 h-16">
         {/* Left Zone: Brand and Navigation Trigger */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
           <button
             onClick={onToggleMobileNav}
-            className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             aria-label="Toggle navigation drawer"
           >
             <Menu className="w-5 h-5" />
@@ -94,18 +97,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div 
             onClick={onOpenLandingPage}
-            className={`flex items-center gap-2.5 ${onOpenLandingPage ? 'cursor-pointer group' : ''}`}
+            className={`flex items-center gap-2 ${onOpenLandingPage ? 'cursor-pointer group' : ''} min-w-0`}
             title={onOpenLandingPage ? "Return to Welcome Landing Page" : undefined}
           >
-            <div className="w-8 h-8 rounded-lg bg-teal-600 group-hover:bg-teal-500 transition-colors flex items-center justify-center font-bold text-white text-sm tracking-wider shadow-xs">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-teal-600 group-hover:bg-teal-500 transition-colors flex items-center justify-center font-bold text-white text-xs sm:text-sm tracking-wider shadow-xs shrink-0">
               GCS
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-slate-100 group-hover:text-teal-300 transition-colors whitespace-nowrap">
-                {t('app.name', 'GCS Operations Hub')}
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-100 group-hover:text-teal-300 transition-colors truncate max-w-[105px] sm:max-w-none">
+                GCS Operations
               </span>
-              <span className="text-[11px] text-slate-400 whitespace-nowrap">
-                {t('app.subtitle', 'Gahanga Cricket Stadium · Kigali')}
+              <span className="text-[10px] sm:text-[11px] text-slate-400 whitespace-nowrap hidden md:inline">
+                Gahanga Cricket Stadium · Kigali
               </span>
             </div>
           </div>
@@ -113,11 +116,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenLandingPage && (
             <button
               onClick={onOpenLandingPage}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 rounded-lg transition-colors cursor-pointer ml-2"
+              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 rounded-lg transition-colors cursor-pointer ml-2"
               title="View public GCS Landing Page"
             >
               <Globe className="w-3.5 h-3.5 text-teal-400" />
-              <span>{t('nav.landing', 'Landing Page')}</span>
+              <span>Landing Page</span>
             </button>
           )}
 
@@ -139,95 +142,25 @@ export const Navbar: React.FC<NavbarProps> = ({
           onNavigateSection={onNavigateSection}
         />
 
-        {/* Center / Right Zone: Role Persona Switcher & Top Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Active Persona / Role Switcher */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowRoleDropdown(!showRoleDropdown);
-                setShowNotifDropdown(false);
-                setShowThemeDropdown(false);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors whitespace-nowrap"
-              title="Switch user perspective to test role permissions"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-              <span className="hidden sm:inline text-slate-400">{t('role.switch_role', 'Role:')}</span>
-              <span className="font-semibold text-white max-w-[140px] sm:max-w-none truncate">
-                {roleLabels[currentUser.role]}
-              </span>
-            </button>
+        {/* Center / Right Zone: Role Persona Switcher, Language & Top Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* Language Switcher (EN / RW / FR / SW) */}
+          <LanguageSwitcher />
 
-            {showRoleDropdown && (
-              <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-3 py-1.5 border-b border-slate-800">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    {t('role.test_persona', 'Switch Test Persona')}
-                  </p>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    {t('role.persona_desc', 'Test role-based permissions & workflows')}
-                  </p>
-                </div>
-                <div className="py-1">
-                  {availableUsers.map((user) => {
-                    const isSelected = user.role === currentUser.role;
-                    return (
-                      <button
-                        key={user.id}
-                        onClick={() => {
-                          onSelectRole(user.role);
-                          setShowRoleDropdown(false);
-                        }}
-                        className={`w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-slate-800 transition-colors ${
-                          isSelected ? 'bg-slate-800/80 text-teal-300' : 'text-slate-200'
-                        }`}
-                      >
-                        <div className="w-7 h-7 rounded-full bg-slate-700 overflow-hidden shrink-0 mt-0.5 border border-slate-600">
-                          {user.avatarUrl ? (
-                            <img
-                              src={user.avatarUrl}
-                              alt={user.name}
-                              className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-300">
-                              {user.name.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-100 truncate">
-                              {user.name}
-                            </span>
-                            {isSelected && <Check className="w-3.5 h-3.5 text-teal-400 shrink-0" />}
-                          </div>
-                          <span className="text-[11px] text-teal-400 block truncate">
-                            {user.jobTitle}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">
-                            {user.department}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+          {/* Active Session Role Display */}
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800/80 border border-slate-700/80 rounded-lg whitespace-nowrap min-h-[36px]" title={`Authenticated as ${currentUser.name} (${roleLabels[currentUser.role]})`}>
+            <UserCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+            <span className="hidden md:inline text-slate-400">Role:</span>
+            <span className="font-semibold text-white max-w-[80px] sm:max-w-[130px] md:max-w-none truncate">
+              {roleLabels[currentUser.role]}
+            </span>
           </div>
 
-          {/* Language Selector: English, Kinyarwanda, French, Kiswahili & GTranslate Bridge */}
-          <LanguageSelector variant="navbar" />
-
-          {/* Background Color & Palette Theme Switcher */}
-          <div className="relative">
+          {/* Background Color & Palette Theme Switcher (Available on sm+ in navbar, and always in mobile drawer) */}
+          <div className="relative hidden sm:block">
             <button
               onClick={() => {
                 setShowThemeDropdown(!showThemeDropdown);
-                setShowRoleDropdown(false);
                 setShowNotifDropdown(false);
               }}
               className="flex items-center gap-1.5 p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
@@ -241,10 +174,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-3 py-1.5 border-b border-slate-800">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    {t('theme.title', 'Background Color Palette')}
+                    Background Color Palette
                   </p>
                   <p className="text-xs text-slate-300 mt-0.5">
-                    {t('theme.desc', 'Select modern operational workspace theme')}
+                    Select modern operational workspace theme
                   </p>
                 </div>
 
@@ -302,7 +235,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => {
                 setShowNotifDropdown(!showNotifDropdown);
-                setShowRoleDropdown(false);
               }}
               className="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
               aria-label={`Notifications, ${unreadCount} unread`}
@@ -314,12 +246,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {showNotifDropdown && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/60">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-200">{t('notif.title', 'Notifications')}</span>
+                    <span className="text-xs font-semibold text-slate-200">Notifications</span>
                     <span className="text-[11px] font-mono tabular-nums text-slate-400">
-                      ({unreadCount} {t('notif.unread', 'unread')})
+                      ({unreadCount} unread)
                     </span>
                   </div>
                   {unreadCount > 0 && (
@@ -327,7 +259,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={onMarkAllNotificationsRead}
                       className="text-[11px] font-medium text-teal-400 hover:text-teal-300 transition-colors"
                     >
-                      {t('action.mark_read', 'Mark all as read')}
+                      Mark all as read
                     </button>
                   )}
                 </div>
@@ -335,7 +267,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="divide-y divide-slate-800/80 max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
                     <div className="p-6 text-center text-xs text-slate-400">
-                      {t('notif.empty', 'No notifications at this time')}
+                      No notifications at this time
                     </div>
                   ) : (
                     notifications.map((notif) => (
@@ -391,6 +323,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
           </button>
+
+          {/* Quick Sign In / Switch Account Button */}
+          {onOpenLoginModal && (
+            <button
+              onClick={onOpenLoginModal}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 rounded-lg transition-colors cursor-pointer"
+              title="Sign in with different staff account / Lock session"
+            >
+              <LogIn className="w-3.5 h-3.5 text-teal-400" />
+              <span className="hidden xl:inline">Sign In / Switch</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

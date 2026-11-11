@@ -3,7 +3,8 @@ import {
   CalendarEvent, 
   CalendarEventType,
   User, 
-  Task 
+  Task,
+  ProfileAttachment
 } from '../../types';
 import { 
   X, 
@@ -25,9 +26,16 @@ import {
   Building2, 
   Package,
   Share2,
-  Tag
+  Tag,
+  Paperclip,
+  Eye,
+  FileText,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  File
 } from 'lucide-react';
 import { downloadIcsFile, getGoogleCalendarUrl } from '../../utils/calendarExport';
+import { FilePreviewModal } from '../common/FilePreviewModal';
 
 interface EventDetailModalProps {
   isOpen: boolean;
@@ -55,6 +63,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   onShowToast
 }) => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<ProfileAttachment | null>(null);
+
+  const canManageEvent = currentUser.role === 'CRICKET_OPERATIONS_MANAGER' || currentUser.role === 'SUPERVISOR' || currentUser.role === 'SYSTEM_ADMIN';
 
   if (!isOpen || !event) return null;
 
@@ -222,23 +233,32 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Quick Status Setter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-400 mr-1">Status:</span>
-              {(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] as const).map(st => (
-                <button
-                  key={st}
-                  onClick={() => onUpdateStatus(event.id, st)}
-                  className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all cursor-pointer ${
-                    event.status === st
-                      ? 'bg-teal-600 text-white shadow-xs font-semibold'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-                  }`}
-                >
-                  {st.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
+            {/* Quick Status Setter (Authorized Roles Only) */}
+            {canManageEvent ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-400 mr-1">Status:</span>
+                {(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] as const).map(st => (
+                  <button
+                    key={st}
+                    onClick={() => onUpdateStatus(event.id, st)}
+                    className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all cursor-pointer ${
+                      event.status === st
+                        ? 'bg-teal-600 text-white shadow-xs font-semibold'
+                        : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                    }`}
+                  >
+                    {st.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-400">Current Status:</span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-950/80 text-teal-300 border border-teal-800">
+                  {(event.status || 'SCHEDULED').replace('_', ' ')}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Tags */}
@@ -250,6 +270,74 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   #{tag}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* Event Attached Reference Documents & Specifications */}
+          {event.attachments && event.attachments.length > 0 && (
+            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-teal-400" />
+                  <span className="text-xs font-semibold text-slate-200">
+                    Event Reference Documents &amp; Briefs ({event.attachments.length})
+                  </span>
+                </div>
+                <span className="text-[10px] text-teal-400 font-mono">Verified Dossier</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {event.attachments.map((att) => {
+                  const isImg = att.dataUrl?.startsWith('data:image/');
+                  const isPdf = att.name.toLowerCase().endsWith('.pdf');
+                  const isCsv = att.name.toLowerCase().endsWith('.csv');
+                  return (
+                    <div
+                      key={att.id}
+                      className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between gap-2 group hover:border-slate-700 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {isImg ? (
+                          <ImageIcon className="w-4 h-4 text-purple-400 shrink-0" />
+                        ) : isPdf ? (
+                          <FileText className="w-4 h-4 text-rose-400 shrink-0" />
+                        ) : isCsv ? (
+                          <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
+                        ) : (
+                          <File className="w-4 h-4 text-teal-400 shrink-0" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-200 font-medium truncate group-hover:text-teal-300 transition-colors">
+                            {att.name}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            {(att.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewAttachment(att)}
+                          title="Preview document"
+                          className="p-1 text-slate-400 hover:text-teal-300 hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        {(att.dataUrl || att.content) && (
+                          <a
+                            href={att.dataUrl || `data:text/plain;charset=utf-8,${encodeURIComponent(att.content || '')}`}
+                            download={att.name}
+                            title="Download document"
+                            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -341,25 +429,29 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             </button>
           </div>
 
-          {/* Management Buttons */}
+          {/* Management Buttons (Authorized Roles Only) */}
           <div className="flex items-center gap-2">
-            {!showConfirmDelete && (
-              <button
-                onClick={() => setShowConfirmDelete(true)}
-                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                title="Delete event"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
+            {canManageEvent && (
+              <>
+                {!showConfirmDelete && (
+                  <button
+                    onClick={() => setShowConfirmDelete(true)}
+                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                    title="Delete event"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
 
-            <button
-              onClick={() => onEditEvent(event)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Edit Event</span>
-            </button>
+                <button
+                  onClick={() => onEditEvent(event)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Event</span>
+                </button>
+              </>
+            )}
 
             <button
               onClick={onClose}
@@ -370,6 +462,22 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        isOpen={!!previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        attachment={previewAttachment}
+        allAttachments={event.attachments || []}
+        onSelectAttachment={(att) => setPreviewAttachment(att)}
+        userContext={{
+          name: currentUser.name,
+          positionName: currentUser.positionName || currentUser.jobTitle,
+          department: currentUser.department,
+          evaluationLevel: currentUser.evaluationLevel,
+          email: currentUser.email
+        }}
+      />
     </div>
   );
 };

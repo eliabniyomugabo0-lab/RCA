@@ -10,7 +10,6 @@ import {
   UserCheck
 } from 'lucide-react';
 import { AuditLogEntry } from '../../types';
-import { useTranslation } from '../../context/LanguageContext';
 
 interface AuditLogViewerProps {
   logs: AuditLogEntry[];
@@ -18,7 +17,6 @@ interface AuditLogViewerProps {
 }
 
 export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ logs, onShowToast }) => {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [entityFilter, setEntityFilter] = useState('ALL');
 
@@ -53,7 +51,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ logs, onShowToas
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">
-            {t('nav.audit', 'Audit Trail & Compliance')}
+            Audit Trail & Accountability Ledger
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Immutable tracking of task assignments, report approvals, stock movements, and permissions
@@ -65,7 +63,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ logs, onShowToas
           className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap self-start sm:self-auto"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>{t('action.export_audit', 'Export Audit Log')}</span>
+          <span>Export Audit Log</span>
         </button>
       </div>
 
@@ -75,7 +73,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ logs, onShowToas
           <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
-            placeholder={t('action.search', 'Search audit trail by actor, action, or description...')}
+            placeholder="Search audit trail by actor, action, or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-teal-500"
@@ -97,9 +95,51 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ logs, onShowToas
         </select>
       </div>
 
-      {/* Table */}
+      {/* Table & Mobile Card View */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+        {/* Mobile Audit Cards */}
+        <div className="block md:hidden divide-y divide-slate-800/80">
+          {filteredLogs.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs">
+              No audit log entries found matching criteria.
+            </div>
+          ) : (
+            filteredLogs.map((log) => (
+              <div key={log.id} className="p-3.5 space-y-2 hover:bg-slate-800/30 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-mono text-xs font-bold text-slate-200 block truncate">
+                      {log.action}
+                    </span>
+                    <span className="text-[10px] text-teal-400 font-mono">
+                      {log.entityType} ({log.entityId})
+                    </span>
+                  </div>
+
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded shrink-0 border ${
+                    log.severity === 'SECURITY' ? 'bg-rose-950/80 text-rose-300 border-rose-800/60' :
+                    log.severity === 'NOTICE' ? 'bg-amber-950/80 text-amber-300 border-amber-800/60' :
+                    'bg-slate-800 text-slate-300 border-slate-700'
+                  }`}>
+                    {log.severity}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/50 p-2 rounded-lg border border-slate-800/60">
+                  {log.details}
+                </p>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/60">
+                  <span>Actor: <strong className="text-slate-200">{log.actorName}</strong> ({log.actorRole})</span>
+                  <span className="font-mono">{new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-950/70 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               <tr>

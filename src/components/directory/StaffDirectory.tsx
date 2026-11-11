@@ -15,11 +15,15 @@ import {
   Heart,
   Clock,
   Sparkles,
-  Camera
+  Camera,
+  Paperclip,
+  Download,
+  FileText,
+  Eye
 } from 'lucide-react';
-import { User, Department } from '../../types';
+import { User, Department, ProfileAttachment } from '../../types';
 import { Modal } from '../common/Modal';
-import { useTranslation } from '../../context/LanguageContext';
+import { FilePreviewModal } from '../common/FilePreviewModal';
 
 interface StaffDirectoryProps {
   users: User[];
@@ -36,10 +40,10 @@ export const StaffDirectory: React.FC<StaffDirectoryProps> = ({
   onOpenProfile,
   initialUserId
 }) => {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [selectedStaff, setSelectedStaff] = useState<User | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<ProfileAttachment | null>(null);
 
   useEffect(() => {
     if (initialUserId) {
@@ -80,7 +84,7 @@ export const StaffDirectory: React.FC<StaffDirectoryProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">
-            {t('nav.directory', 'Staff & Team Directory')}
+            Staff Directory & Organization
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Operational personnel, department rosters, education backgrounds, and evaluation tiers
@@ -318,6 +322,106 @@ export const StaffDirectory: React.FC<StaffDirectoryProps> = ({
               </div>
             )}
 
+            {/* Attached Credentials & Dossier Files */}
+            {selectedStaff.attachments && selectedStaff.attachments.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="w-3.5 h-3.5 text-teal-400" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                      Attached Credentials & Dossier Files
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-teal-300 bg-teal-950/80 px-2 py-0.5 rounded border border-teal-800/80">
+                    {selectedStaff.attachments.length} {selectedStaff.attachments.length === 1 ? 'Record' : 'Records'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {selectedStaff.attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="flex items-center justify-between gap-3 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl hover:border-slate-700/80 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-teal-950/60 border border-teal-800/80 text-teal-400 flex items-center justify-center shrink-0">
+                          <FileText className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-200 truncate">
+                            {att.name}
+                          </p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                            <span className="text-teal-400 font-medium">
+                              {att.category ? att.category.replace('_', ' ') : 'Document'}
+                            </span>
+                            <span>·</span>
+                            <span>{new Date(att.uploadedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            {att.notes && (
+                              <>
+                                <span>·</span>
+                                <span className="italic truncate max-w-[200px] text-slate-500">{att.notes}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewAttachment(att)}
+                          className="px-2 py-1 bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer border border-teal-500/40"
+                          title="Preview Document / Certificate"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Preview</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (att.dataUrl) {
+                              const link = document.createElement('a');
+                              link.href = att.dataUrl;
+                              link.download = att.name;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            } else {
+                              const blob = new Blob([
+                                `GAHANGA CRICKET STADIUM — OFFICIAL PERSONNEL DOSSIER\n` +
+                                `====================================================\n` +
+                                `Document: ${att.name}\n` +
+                                `Personnel: ${selectedStaff.name} (${selectedStaff.positionName})\n` +
+                                `Category: ${att.category || 'General'}\n` +
+                                `Uploaded: ${new Date(att.uploadedAt).toLocaleString()}\n` +
+                                `Notes: ${att.notes || 'Verified official document on file'}\n` +
+                                `====================================================\n` +
+                                `Authenticated in GCS Operations Storage Engine.`
+                              ], { type: 'text/plain;charset=utf-8' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = att.name.endsWith('.pdf') ? att.name.replace('.pdf', '.txt') : `${att.name}.txt`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(url);
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-teal-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Download / View document"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Modal Actions */}
             <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
               <div>
@@ -361,6 +465,24 @@ export const StaffDirectory: React.FC<StaffDirectoryProps> = ({
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Staff File Preview Modal */}
+      {selectedStaff && (
+        <FilePreviewModal
+          isOpen={!!previewAttachment}
+          onClose={() => setPreviewAttachment(null)}
+          attachment={previewAttachment}
+          allAttachments={selectedStaff.attachments || []}
+          onSelectAttachment={(att) => setPreviewAttachment(att)}
+          userContext={{
+            name: selectedStaff.name,
+            positionName: selectedStaff.positionName || selectedStaff.jobTitle,
+            department: selectedStaff.department,
+            evaluationLevel: selectedStaff.evaluationLevel,
+            email: selectedStaff.email
+          }}
+        />
       )}
     </div>
   );

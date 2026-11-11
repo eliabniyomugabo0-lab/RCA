@@ -12,7 +12,11 @@ import {
   MapPin, 
   ShieldCheck,
   CheckCircle2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  QrCode,
+  Scan,
+  Paperclip,
+  Eye
 } from 'lucide-react';
 import { 
   InventoryItem, 
@@ -20,10 +24,71 @@ import {
   StockRequest, 
   User as UserType, 
   Role, 
-  StockMovementType 
+  StockMovementType,
+  ProfileAttachment
 } from '../../types';
 import { Modal } from '../common/Modal';
-import { useTranslation } from '../../context/LanguageContext';
+import { InventoryQrModal } from './InventoryQrModal';
+import { InventoryQrScannerModal } from './InventoryQrScannerModal';
+import { OptionalAttachmentField, QuickTemplateOption } from '../common/OptionalAttachmentField';
+import { FilePreviewModal } from '../common/FilePreviewModal';
+
+const RECEIVE_TEMPLATES: QuickTemplateOption[] = [
+  {
+    label: 'Supplier Delivery Note & Batch Inspection Log',
+    name: 'GCS_Supplier_Delivery_Inspection_Note.csv',
+    content: 'Item SKU,Quantity Received,Batch Ref,Quality Check,Inspector\nGCS-BAT-01,24,BATCH-2026-OCT-12,Grade A Wood Verified,Storekeeper JP\nGCS-BAL-01,30,KOK-W-2026-RW,Seam Stitch Inspection Passed,Storekeeper JP',
+    size: 110000,
+    category: 'ACCREDITATION'
+  },
+  {
+    label: 'Official Goods Received Note (GRN) Voucher',
+    name: 'GCS_Goods_Received_Note_GRN_2026.pdf',
+    content: 'GAHANGA CRICKET STADIUM — CENTRAL STORES\nGOODS RECEIVED NOTE (GRN)\n\nShipment verified against Purchase Order specs.\nAll items placed in climate-controlled storage vaults.',
+    size: 215000,
+    category: 'MEMO_REPORT'
+  }
+];
+
+const ISSUE_TEMPLATES: QuickTemplateOption[] = [
+  {
+    label: 'Squad Requisition & Handover Authorization',
+    name: 'GCS_Equipment_Issue_Handover_Voucher.pdf',
+    content: 'OFFICIAL KIT ISSUE & CUSTODY HANDOVER VOUCHER\n\nAuthorized recipient accepts responsibility for all checked-out match gear and safety accessories.\nReturn expected post-match or training completion.',
+    size: 165000,
+    category: 'CONTRACT'
+  }
+];
+
+const RETURN_TEMPLATES: QuickTemplateOption[] = [
+  {
+    label: 'Equipment Return & Post-Practice Audit',
+    name: 'GCS_Equipment_Return_Condition_Audit.pdf',
+    content: 'STORES RETURN CONDITION AUDIT\n\nGear returned cleaned, counted, and inspected for defects.\nAll returned units restored to available active inventory.',
+    size: 140000,
+    category: 'MEMO_REPORT'
+  }
+];
+
+const DAMAGE_TEMPLATES: QuickTemplateOption[] = [
+  {
+    label: 'Incident Report & Damage Assessment Proof',
+    name: 'GCS_Damaged_Equipment_Triage_Report.pdf',
+    content: 'EQUIPMENT DAMAGE INCIDENT REPORT\n\nImpact description, photo verification reference, and recommendation for retirement or specialist workshop repair.',
+    size: 180000,
+    category: 'MEMO_REPORT'
+  }
+];
+
+const REQUEST_TEMPLATES: QuickTemplateOption[] = [
+  {
+    label: 'Tournament Logistics Requisition Justification',
+    name: 'GCS_Stock_Requisition_Justification.pdf',
+    content: 'HIGH PERFORMANCE SQUAD REQUISITION BRIEF\n\nOutlines tactical match schedule, training cadence, and kit requirements.',
+    size: 150000,
+    category: 'MEMO_REPORT'
+  }
+];
 
 interface InventoryHubProps {
   currentUser: UserType;
@@ -46,23 +111,19 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
   onShowToast,
   initialItemId
 }) => {
-  const { t, translateInventory } = useTranslation();
   const [activeTab, setActiveTab] = useState<'catalog' | 'ledger' | 'requests' | 'alerts'>('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
 
-  // Multi-lingual translations for inventory items
-  const displayedInventory = translateInventory(inventory);
-
   useEffect(() => {
     if (initialItemId) {
-      const found = displayedInventory.find(i => i.id === initialItemId);
+      const found = inventory.find(i => i.id === initialItemId);
       if (found) {
         setActiveTab('catalog');
         setSearchQuery(found.name);
       }
     }
-  }, [initialItemId, displayedInventory]);
+  }, [initialItemId, inventory]);
 
   // Modals
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
@@ -70,6 +131,9 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [isDamageModalOpen, setIsDamageModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrItemForModal, setQrItemForModal] = useState<InventoryItem | null>(null);
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
 
   // Forms
   const [selectedItemId, setSelectedItemId] = useState(inventory[0]?.id || '');
@@ -83,9 +147,14 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
   const [reqEvent, setReqEvent] = useState('');
   const [reqQty, setReqQty] = useState(2);
 
-  const categories = Array.from(new Set(displayedInventory.map(i => i.category)));
+  // Form Attachments (Encouraged & Optional)
+  const [movementAttachments, setMovementAttachments] = useState<ProfileAttachment[]>([]);
+  const [requestAttachments, setRequestAttachments] = useState<ProfileAttachment[]>([]);
+  const [previewAttachment, setPreviewAttachment] = useState<ProfileAttachment | null>(null);
 
-  const filteredInventory = displayedInventory.filter(item => {
+  const categories = Array.from(new Set(inventory.map(i => i.category)));
+
+  const filteredInventory = inventory.filter(item => {
     const matchesSearch = 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +163,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
     return matchesSearch && matchesCategory;
   });
 
-  const lowStockItems = displayedInventory.filter(i => i.availableQuantity <= i.reorderThreshold);
+  const lowStockItems = inventory.filter(i => i.availableQuantity <= i.reorderThreshold);
 
   // Permissions
   const canReceiveOrIssue = currentUser.role === 'STOREKEEPER' || currentUser.role === 'SYSTEM_ADMIN' || currentUser.role === 'CRICKET_OPERATIONS_MANAGER';
@@ -131,6 +200,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
       performedByName: currentUser.name,
       reason: movementReason || 'Direct stock replenishment',
       referenceNumber: `RCV-${Date.now().toString().slice(-6)}`,
+      attachments: movementAttachments.length > 0 ? movementAttachments : undefined,
       timestamp: new Date().toISOString()
     };
 
@@ -139,6 +209,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
     setIsReceiveModalOpen(false);
     setMovementQty(1);
     setMovementReason('');
+    setMovementAttachments([]);
     onShowToast('success', 'Stock Received', `Added ${movementQty} ${item.unit} of ${item.name} into ${item.location}`);
   };
 
@@ -178,6 +249,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
       performedByName: currentUser.name,
       reason: movementReason || 'Operational fixture issue',
       referenceNumber: `ISS-${Date.now().toString().slice(-6)}`,
+      attachments: movementAttachments.length > 0 ? movementAttachments : undefined,
       timestamp: new Date().toISOString()
     };
 
@@ -186,6 +258,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
     setIsIssueModalOpen(false);
     setMovementQty(1);
     setMovementReason('');
+    setMovementAttachments([]);
     onShowToast('success', 'Stock Issued', `Issued ${movementQty} ${item.unit} to ${movementParty || 'Authorized recipient'}`);
   };
 
@@ -220,6 +293,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
       performedByName: currentUser.name,
       reason: movementReason || 'Returned following training session',
       referenceNumber: `RET-${Date.now().toString().slice(-6)}`,
+      attachments: movementAttachments.length > 0 ? movementAttachments : undefined,
       timestamp: new Date().toISOString()
     };
 
@@ -228,6 +302,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
     setIsReturnModalOpen(false);
     setMovementQty(1);
     setMovementReason('');
+    setMovementAttachments([]);
     onShowToast('success', 'Equipment Returned', `Checked in ${movementQty} ${item.unit} back to ${item.location}`);
   };
 
@@ -267,6 +342,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
       performedByName: currentUser.name,
       reason: movementReason || 'Broken during match play',
       referenceNumber: `DMG-${Date.now().toString().slice(-6)}`,
+      attachments: movementAttachments.length > 0 ? movementAttachments : undefined,
       timestamp: new Date().toISOString()
     };
 
@@ -275,6 +351,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
     setIsDamageModalOpen(false);
     setMovementQty(1);
     setMovementReason('');
+    setMovementAttachments([]);
     onShowToast('info', 'Damage Recorded', `Recorded ${movementQty} units of ${item.name} to damaged quarantine.`);
   };
 
@@ -302,6 +379,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
       purpose: reqPurpose || 'Equipment requisition for upcoming match.',
       neededByDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
       status: 'PENDING',
+      attachments: requestAttachments.length > 0 ? requestAttachments : undefined,
       createdAt: new Date().toISOString()
     };
 
@@ -309,6 +387,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
     setIsRequestModalOpen(false);
     setReqPurpose('');
     setReqEvent('');
+    setRequestAttachments([]);
     onShowToast('success', 'Request Filed', 'Requisition submitted to Storekeeper and Operations Manager.');
   };
 
@@ -335,7 +414,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">
-            {t('nav.inventory', 'Store & Equipment Inventory')}
+            Store & Equipment Inventory
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Traceable stock movements, cricket kit management, reorder alerts, and custody audits
@@ -372,16 +451,25 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
           )}
 
           <button
+            onClick={() => setIsQrScannerOpen(true)}
+            className="px-3 py-1.5 text-xs font-semibold text-teal-300 bg-teal-950/80 hover:bg-teal-900 border border-teal-500/40 rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+            title="Scan equipment QR tag or barcode"
+          >
+            <Scan className="w-3.5 h-3.5 text-teal-400" />
+            <span>Scan QR Tag</span>
+          </button>
+
+          <button
             onClick={() => setIsRequestModalOpen(true)}
-            className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1.5 border border-slate-700"
+            className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1.5 border border-slate-700 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 text-teal-400" />
-            <span>{t('action.requisition_equipment', 'Request Kit')}</span>
+            <span>Request Kit</span>
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
             title="Export CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -468,9 +556,92 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </select>
           </div>
 
-          {/* Catalog Table */}
+          {/* Catalog Table & Mobile Cards */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
+            {/* Mobile Card View (phones & small tablets) */}
+            <div className="block md:hidden divide-y divide-slate-800/80">
+              {filteredInventory.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  No inventory items found matching your filters.
+                </div>
+              ) : (
+                filteredInventory.map((item) => {
+                  const isLow = item.availableQuantity <= item.reorderThreshold;
+                  return (
+                    <div key={item.id} className="p-3.5 space-y-3 hover:bg-slate-800/30 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-slate-100 truncate">{item.name}</h4>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                            <span className="font-mono text-teal-400">{item.sku}</span>
+                            <span>·</span>
+                            <span>{item.category}</span>
+                            {item.condition && (
+                              <>
+                                <span>·</span>
+                                <span className="text-slate-300">{item.condition}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className={`text-xs font-mono font-bold ${isLow ? 'text-amber-400' : 'text-slate-100'}`}>
+                            {item.availableQuantity} {item.unit}
+                          </span>
+                          {isLow && (
+                            <span className="text-[9px] block text-amber-500 font-semibold">
+                              Low (Min: {item.reorderThreshold})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-950/60 px-2.5 py-1.5 rounded-lg">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <span className="truncate">{item.location}</span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0 font-mono text-[10px]">
+                          <span>Res: {item.reservedQuantity}</span>
+                          <span>Dmg: {item.damagedQuantity}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-800/60">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQrItemForModal(item);
+                            setIsQrModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 text-xs font-semibold text-teal-300 hover:text-white bg-teal-950/60 hover:bg-teal-900 border border-teal-500/30 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px]"
+                        >
+                          <QrCode className="w-3.5 h-3.5 text-teal-400" />
+                          <span>QR Tag</span>
+                        </button>
+
+                        {canReceiveOrIssue && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedItemId(item.id);
+                              setIsDamageModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 text-xs text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700/80 border border-slate-700/60 rounded-lg font-medium transition-colors cursor-pointer min-h-[36px]"
+                          >
+                            Flag Defect
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950/70 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                   <tr>
@@ -481,7 +652,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
                     <th className="px-4 py-3 text-right">Reserved</th>
                     <th className="px-4 py-3 text-right">Damaged</th>
                     <th className="px-4 py-3">Storage Location</th>
-                    <th className="px-4 py-3 text-right">Action</th>
+                    <th className="px-4 py-3 text-right">Asset QR & Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -540,18 +711,32 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
                         </td>
 
                         <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                          {canReceiveOrIssue && (
+                          <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => {
-                                setSelectedItemId(item.id);
-                                setIsDamageModalOpen(true);
+                                setQrItemForModal(item);
+                                setIsQrModalOpen(true);
                               }}
-                              className="text-[11px] text-slate-400 hover:text-rose-400 font-medium"
-                              title="Flag Damaged / Missing"
+                              className="px-2.5 py-1 text-[11px] font-semibold text-teal-300 hover:text-white bg-teal-950/60 hover:bg-teal-900 border border-teal-500/30 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Generate QR code and printable asset tag"
                             >
-                              Flag Defect
+                              <QrCode className="w-3.5 h-3.5 text-teal-400" />
+                              <span>QR Tag</span>
                             </button>
-                          )}
+
+                            {canReceiveOrIssue && (
+                              <button
+                                onClick={() => {
+                                  setSelectedItemId(item.id);
+                                  setIsDamageModalOpen(true);
+                                }}
+                                className="text-[11px] text-slate-400 hover:text-rose-400 font-medium px-1.5 py-1"
+                                title="Flag Damaged / Missing"
+                              >
+                                Flag Defect
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -575,7 +760,53 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card List for Ledger */}
+          <div className="block md:hidden divide-y divide-slate-800/80">
+            {movements.map((mov) => (
+              <div key={mov.id} className="p-3.5 space-y-2 hover:bg-slate-800/30 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-100">{mov.itemName}</h4>
+                    <span className="font-mono text-[10px] text-slate-500">{mov.itemSku}</span>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    mov.type === 'RECEIPT' ? 'bg-teal-950/80 text-teal-300 border-teal-800/60' :
+                    mov.type === 'ISSUE' ? 'bg-sky-950/80 text-sky-300 border-sky-800/60' :
+                    mov.type === 'RETURN' ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60' :
+                    'bg-rose-950/80 text-rose-300 border-rose-800/60'
+                  }`}>
+                    {mov.type.replace('_', ' ')}: {mov.type === 'ISSUE' || mov.type === 'DAMAGE_LOSS' ? `-${mov.quantity}` : `+${mov.quantity}`}
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                  <span className="truncate">{mov.sourceLocation}</span>
+                  <span className="text-slate-600">→</span>
+                  <span className="text-slate-200 truncate">{mov.destinationLocation}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60">
+                  <span>By: <strong className="text-slate-300">{mov.performedByName}</strong></span>
+                  <div className="flex items-center gap-2">
+                    {mov.attachments && mov.attachments.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewAttachment(mov.attachments![0])}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-teal-950/80 text-teal-300 border border-teal-800/60 cursor-pointer"
+                      >
+                        <Paperclip className="w-2.5 h-2.5" />
+                        <span>{mov.attachments.length}</span>
+                      </button>
+                    )}
+                    <span className="font-mono">{new Date(mov.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View for Ledger */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-300">
               <thead className="bg-slate-950/70 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                 <tr>
@@ -630,8 +861,21 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
                       {mov.performedByName}
                     </td>
 
-                    <td className="px-4 py-3 text-slate-400 text-[11px] max-w-xs truncate">
-                      {mov.reason}
+                    <td className="px-4 py-3 text-slate-400 text-[11px] max-w-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate">{mov.reason}</span>
+                        {mov.attachments && mov.attachments.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewAttachment(mov.attachments![0])}
+                            title={`${mov.attachments.length} file(s) attached — click to preview`}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-teal-950/80 text-teal-300 border border-teal-800/60 hover:bg-teal-900/80 transition-colors shrink-0 cursor-pointer"
+                          >
+                            <Paperclip className="w-2.5 h-2.5" />
+                            <span>{mov.attachments.length}</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -731,7 +975,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
         onClose={() => setIsReceiveModalOpen(false)}
         title="Receive Inventory Delivery"
         subtitle="Record incoming stock from official purchase order or donation"
-        maxWidth="lg"
+        maxWidth="xl"
       >
         <form onSubmit={handleReceiveStock} className="space-y-4 text-xs">
           <div>
@@ -766,7 +1010,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
               <label className="block text-slate-300 font-medium mb-1">Supplier / Dispatch Origin</label>
               <input
                 type="text"
-                placeholder="e.g. Kookaburra East Africa / PO-2026-092"
+                placeholder="e.g. Sports Equipment Supplier / PO-2026-092"
                 value={movementLocation}
                 onChange={(e) => setMovementLocation(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-teal-500"
@@ -785,6 +1029,17 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             />
           </div>
 
+          {/* Optional Attachments Field (Encouraged) */}
+          <OptionalAttachmentField
+            attachments={movementAttachments}
+            onChange={setMovementAttachments}
+            title="Optional Delivery Note & Purchase Invoice"
+            encouragementText="Encouraged: Attach supplier delivery note, purchase invoice, packing manifest, or shipment photo for transparent store audit. Submissions without files are accepted."
+            quickTemplates={RECEIVE_TEMPLATES}
+            onPreviewAttachment={(att) => setPreviewAttachment(att)}
+            compact
+          />
+
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -795,7 +1050,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
             >
               Record Receipt into Stock
             </button>
@@ -809,7 +1064,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
         onClose={() => setIsIssueModalOpen(false)}
         title="Issue Equipment to Squad or Match"
         subtitle="Transfers custody from central store to team manager or ground staff"
-        maxWidth="lg"
+        maxWidth="xl"
       >
         <form onSubmit={handleIssueStock} className="space-y-4 text-xs">
           <div>
@@ -864,6 +1119,17 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             />
           </div>
 
+          {/* Optional Attachments Field (Encouraged) */}
+          <OptionalAttachmentField
+            attachments={movementAttachments}
+            onChange={setMovementAttachments}
+            title="Optional Dispatch Voucher & Signed Requisition"
+            encouragementText="Encouraged: Attach signed coach authorization slip, training camp requisition, or kit handover photo. Submissions without files are accepted."
+            quickTemplates={ISSUE_TEMPLATES}
+            onPreviewAttachment={(att) => setPreviewAttachment(att)}
+            compact
+          />
+
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -874,7 +1140,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
             >
               Confirm Issue & Update Ledger
             </button>
@@ -888,7 +1154,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
         onClose={() => setIsReturnModalOpen(false)}
         title="Record Equipment Return"
         subtitle="Check reusable bats, pads, or equipment back into store custody"
-        maxWidth="lg"
+        maxWidth="xl"
       >
         <form onSubmit={handleReturnStock} className="space-y-4 text-xs">
           <div>
@@ -942,6 +1208,17 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             />
           </div>
 
+          {/* Optional Attachments Field (Encouraged) */}
+          <OptionalAttachmentField
+            attachments={movementAttachments}
+            onChange={setMovementAttachments}
+            title="Optional Return Condition Audit Slip"
+            encouragementText="Encouraged: Attach return check-in sheet, post-training gear audit notes, or photo. Submissions without files are accepted."
+            quickTemplates={RETURN_TEMPLATES}
+            onPreviewAttachment={(att) => setPreviewAttachment(att)}
+            compact
+          />
+
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -952,7 +1229,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
             >
               Confirm Return & Restore Available Stock
             </button>
@@ -966,7 +1243,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
         onClose={() => setIsDamageModalOpen(false)}
         title="Report Damaged or Defective Equipment"
         subtitle="Quarantines item and logs immutable write-off audit reason"
-        maxWidth="lg"
+        maxWidth="xl"
       >
         <form onSubmit={handleDamageStock} className="space-y-4 text-xs">
           <div>
@@ -1008,6 +1285,17 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             />
           </div>
 
+          {/* Optional Attachments Field (Encouraged) */}
+          <OptionalAttachmentField
+            attachments={movementAttachments}
+            onChange={setMovementAttachments}
+            title="Optional Incident Evidence & Damage Photos"
+            encouragementText="Encouraged: Attach photo proof of cracked willow, punctured gear, or repair estimate. Submissions without files are accepted."
+            quickTemplates={DAMAGE_TEMPLATES}
+            onPreviewAttachment={(att) => setPreviewAttachment(att)}
+            compact
+          />
+
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -1018,7 +1306,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
             >
               Quarantine Damaged Stock
             </button>
@@ -1032,7 +1320,7 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
         onClose={() => setIsRequestModalOpen(false)}
         title="Submit Equipment Requisition Request"
         subtitle="Request cricket equipment for matches, academy training, or ground maintenance"
-        maxWidth="lg"
+        maxWidth="xl"
       >
         <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
           <div>
@@ -1087,6 +1375,17 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             />
           </div>
 
+          {/* Optional Attachments Field (Encouraged) */}
+          <OptionalAttachmentField
+            attachments={requestAttachments}
+            onChange={setRequestAttachments}
+            title="Optional Tournament Schedule & Justification"
+            encouragementText="Encouraged: Attach match schedule, coach requisition plan, or squad kit requirements. Submissions without files are accepted."
+            quickTemplates={REQUEST_TEMPLATES}
+            onPreviewAttachment={(att) => setPreviewAttachment(att)}
+            compact
+          />
+
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -1097,13 +1396,75 @@ export const InventoryHub: React.FC<InventoryHubProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
             >
               Submit Requisition
             </button>
           </div>
         </form>
       </Modal>
+
+      {/* Inventory Item QR Code & Printable Label Modal */}
+      <InventoryQrModal
+        item={qrItemForModal}
+        isOpen={isQrModalOpen}
+        onClose={() => {
+          setIsQrModalOpen(false);
+          setQrItemForModal(null);
+        }}
+        onShowToast={onShowToast}
+      />
+
+      {/* Equipment QR Tag & Barcode Live Scanner Modal */}
+      <InventoryQrScannerModal
+        isOpen={isQrScannerOpen}
+        onClose={() => setIsQrScannerOpen(false)}
+        inventory={inventory}
+        currentUser={currentUser}
+        onOpenReceiveForItem={(item) => {
+          setSelectedItemId(item.id);
+          setIsReceiveModalOpen(true);
+        }}
+        onOpenIssueForItem={(item) => {
+          setSelectedItemId(item.id);
+          setIsIssueModalOpen(true);
+        }}
+        onOpenReturnForItem={(item) => {
+          setSelectedItemId(item.id);
+          setIsReturnModalOpen(true);
+        }}
+        onOpenDamageForItem={(item) => {
+          setSelectedItemId(item.id);
+          setIsDamageModalOpen(true);
+        }}
+        onShowToast={onShowToast}
+      />
+
+      {/* File Preview Modal for Equipment & Movement Documents */}
+      <FilePreviewModal
+        isOpen={!!previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        attachment={previewAttachment}
+        allAttachments={
+          previewAttachment
+            ? [
+                previewAttachment,
+                ...movementAttachments,
+                ...requestAttachments,
+                ...(movements.flatMap(m => m.attachments || [])),
+                ...(requests.flatMap(r => r.attachments || []))
+              ].filter((a, idx, arr) => arr.findIndex(x => x.id === a.id) === idx)
+            : []
+        }
+        onSelectAttachment={(att) => setPreviewAttachment(att)}
+        userContext={{
+          name: currentUser.name,
+          positionName: currentUser.positionName || currentUser.jobTitle,
+          department: currentUser.department,
+          evaluationLevel: currentUser.evaluationLevel,
+          email: currentUser.email
+        }}
+      />
     </div>
   );
 };

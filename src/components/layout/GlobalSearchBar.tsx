@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { Task, InventoryItem, User, TaskPriority, TaskStatus, CalendarEvent } from '../../types';
 import { NavSection } from './Sidebar';
-import { useTranslation } from '../../context/LanguageContext';
 
 export interface GlobalSearchBarProps {
   tasks?: Task[];
@@ -47,16 +46,10 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
   onSelectCalendarEvent,
   onNavigateSection
 }) => {
-  const { t, translateTasks, translateInventory, translateEvents } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SearchCategory>('ALL');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-  // Multi-lingual translations for search dataset
-  const displayedTasks = translateTasks(tasks);
-  const displayedInventory = translateInventory(inventory);
-  const displayedEvents = translateEvents(events);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -101,7 +94,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
   const query = searchQuery.trim().toLowerCase();
 
   const matchingTasks = query
-    ? displayedTasks.filter((t) => {
+    ? tasks.filter((t) => {
         return (
           t.title.toLowerCase().includes(query) ||
           (t.description && t.description.toLowerCase().includes(query)) ||
@@ -115,7 +108,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
     : [];
 
   const matchingInventory = query
-    ? displayedInventory.filter((i) => {
+    ? inventory.filter((i) => {
         return (
           i.name.toLowerCase().includes(query) ||
           i.sku.toLowerCase().includes(query) ||
@@ -142,7 +135,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
     : [];
 
   const matchingEvents = query
-    ? (displayedEvents || []).filter((e) => {
+    ? (events || []).filter((e) => {
         return (
           e.title.toLowerCase().includes(query) ||
           e.location.toLowerCase().includes(query) ||
@@ -754,7 +747,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            placeholder={`${t('action.search', 'Search operations, tasks, inventory, staff...')} (⌘K)`}
+            placeholder="Search tasks, inventory, staff... (⌘K)"
             className="w-full pl-9 pr-14 py-1.5 bg-slate-950/70 hover:bg-slate-950/90 focus:bg-slate-950 text-xs sm:text-sm text-slate-200 placeholder:text-slate-400 rounded-lg border border-slate-700/80 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 transition-colors"
           />
           <div className="absolute right-2 flex items-center gap-1">
@@ -800,7 +793,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
 
       {/* Mobile Full-Screen / Modal Search Drawer */}
       {isMobileOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col md:hidden animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col md:hidden animate-in fade-in duration-150 pt-safe pb-safe pl-safe pr-safe">
           <div className="p-3 border-b border-slate-800 flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -809,7 +802,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('action.search', 'Search operations, tasks, inventory, staff...')}
+                placeholder="Search tasks, stores, staff..."
                 className="w-full pl-9 pr-8 py-2 bg-slate-900 text-sm text-slate-100 placeholder:text-slate-400 rounded-lg border border-slate-700 focus:border-teal-500 focus:outline-none"
               />
               {searchQuery && (
@@ -828,11 +821,11 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
               onClick={() => setIsMobileOpen(false)}
               className="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 rounded-lg"
             >
-              {t('action.cancel', 'Cancel')}
+              Cancel
             </button>
           </div>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             {renderDropdownContent()}
           </div>
         </div>

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>GCS Operations Hub — Gahanga Cricket Stadium</title>
     <meta name="description" content="Comprehensive operations, inventory, task tracking, and communication hub for Gahanga Cricket Stadium (GCS)." />
     <meta property="og:title" content="GCS Operations Hub — Gahanga Cricket Stadium" />
@@ -12,28 +12,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-      /* Clean integration for Google Translate element */
-      .goog-te-banner-frame.skiptranslate,
-      .goog-te-banner-frame,
-      #goog-gt-tt,
-      .goog-te-balloon-frame {
-        display: none !important;
-      }
-      body {
-        top: 0px !important;
-        position: static !important;
-      }
-      .goog-text-highlight {
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-      .skiptranslate iframe {
-        display: none !important;
-      }
-    </style>
+  </head>
+  <body class="bg-slate-900 text-slate-100 antialiased font-sans">
+    <div id="google_translate_element" style="display:none"></div>
+    <div id="root"></div>
     <script type="text/javascript">
-      function googleTranslateElementInit() {
+      window.googleTranslateElementInit = function() {
         try {
           if (window.google && window.google.translate) {
             new window.google.translate.TranslateElement({
@@ -43,15 +27,11 @@
             }, 'google_translate_element');
           }
         } catch (e) {
-          console.debug('GTranslate init note:', e);
+          console.warn('Google Translate initialization note:', e);
         }
-      }
+      };
     </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
-  </head>
-  <body class="bg-slate-900 text-slate-100 antialiased font-sans">
-    <div id="google_translate_element" style="position:fixed;bottom:-9999px;left:-9999px;opacity:0;pointer-events:none;z-index:-999;"></div>
-    <div id="root"></div>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
